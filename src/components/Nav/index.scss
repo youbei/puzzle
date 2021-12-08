@@ -1,0 +1,24 @@
+.nav {
+    border-right: 1px solid #000;
+    box-sizing: border-box;
+    flex: 0 0 20%;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    &-item {
+        cursor: pointer;
+        border-bottom: 1px solid #000;
+        line-height: 60px;
+        width: 100%;
+        text-align: center;
+        display: block;
+    }
+    p {
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding-top: 100px;
+        text-align: center;
+    }
+}
