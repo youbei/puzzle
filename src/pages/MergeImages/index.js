@@ -15,8 +15,11 @@ class Index extends React.Component {
 	}
 
 	dropHandler(e) {
-		this.setState({isDropOver: false})
 		e.preventDefault()
+		this.setState({isDropOver: false})
+		const canvas = document.getElementById('canvas')
+		const context = canvas.getContext('2d')
+		context.clearRect(0, 0, canvas.width, canvas.height)
 
 		const imageList = []
 		const length = e.dataTransfer.items.length
@@ -51,6 +54,7 @@ class Index extends React.Component {
 		canvas.height = adjustedHeight * row
 
 		imageList.forEach((item, i) => {
+			console.log(i)
 			context.drawImage(
 				item, 
 				0, // x轴，从左侧多少像素开始裁切图片 
