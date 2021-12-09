@@ -8,7 +8,9 @@ function Index() {
 		<div className="merge-images">
 			<Header />
 			<Container>
-				<p>crop</p>
+				<div className="merge-images-container">
+					
+				</div>
 			</Container>
 		</div>
 	)
