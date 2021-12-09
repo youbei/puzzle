@@ -4,10 +4,11 @@
     background-color: #000;
     box-sizing: border-box;
     &-logo {
+        box-sizing: border-box;
         text-align: center;
-        width: 20%;
+        width: 240px;
         cursor: pointer;
-        font-size: 48px;
+        font-size: 60px;
         line-height: 60px;
         a {
             color: #fff;

@@ -1,4 +1,37 @@
 .merge-images {
     min-height: 100%;
     width: 100%;
+    &-container {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        box-sizing: border-box;
+        &-left {
+            flex: 1 0 0;
+            box-sizing: border-box;
+            border-right: 1px solid #000;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            canvas {
+                max-width: 96%;
+                max-height: 96%;
+            }
+        }
+        &-right {
+            flex: 0 0 240px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            h1 {
+                z-index: -1;
+                font-size: 28px;
+            }
+        }
+    }
 }
