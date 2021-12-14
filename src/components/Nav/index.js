@@ -28,6 +28,7 @@ function Index() {
 		<div className="nav">
 			<CustomLink to="/merge" className="nav-item">合并图片</CustomLink>
 			<CustomLink to="/crop" className="nav-item">裁切图片</CustomLink>
+			<CustomLink to="/excel" className="nav-item">表格统计</CustomLink>
 			<div className="copyright">{new Date().getFullYear()} 金又北</div>
 		</div>
 	)

@@ -5,6 +5,7 @@ import reportWebVitals from './reportWebVitals'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MergeImages from './pages/MergeImages'
 import CropImages from './pages/CropImages'
+import Excel from './pages/Excel'
 import Home from './pages/Home'
 
 ReactDOM.render(
@@ -15,6 +16,7 @@ ReactDOM.render(
 					<Route index element={<Home />} />
 					<Route path="/merge" element={<MergeImages />} />
 					<Route path="/crop" element={<CropImages />} />
+					<Route path="/excel" element={<Excel />} />
 				</Route>
 			</Routes>
 		</BrowserRouter>
