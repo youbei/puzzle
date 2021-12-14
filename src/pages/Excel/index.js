@@ -46,11 +46,11 @@ class Index extends React.Component {
 				if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
 					if (file.name === 'sku.xlsx') {
 						sku = file
-					} else {
+					} else if (file.name === 'order.xlsx'){
 						order = file
+					} else if (file.name === 'product.xlsx')  {
+						product = file
 					}
-				} else if (file.type === 'text/csv') {
-					product = file
 				}
 			}
 		}
@@ -182,7 +182,9 @@ class Index extends React.Component {
 							>
 								<p>把三个文件拖到这里:</p>
 								<p>淘宝上下载的两个原始表格</p>
-								<p>以及命名为 sku.xlsx 的表格</p>
+								<p>xlsx 后缀的表格命名为 order.xlsx</p>
+								<p>csv 后缀的表格导出到 xlsx 并命名为 product.xlsx</p>
+								<p>以及命名为 sku.xlsx 的 sku 表格</p>
 							</div>
 						</div>
 					</div>
