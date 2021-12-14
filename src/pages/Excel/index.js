@@ -83,21 +83,23 @@ class Index extends React.Component {
 	}
 
 	calc(sku, order, product) {
-		console.log(sku)
 		if (order.length > 0) {
 			let sum = 0
 			let succeed = 0
 			let closed = 0
 			let fake = 0
 			let fakeSum = 0
+			let error = []
 			let o = {} 
+			let s = {} 
+
 			for (let i = 0; i < order.length; i++) { 
 				if (order[i]['订单状态'] === '交易成功') {
 					if (this.fake(order[i]['商家备忘'])) {
 						fakeSum = fakeSum + Number(order[i]['买家实际支付金额'])
 						fake = fake + 1 
 					} else { // 成功订单
-						o[order[i]['订单编号']] = [] 
+						o[order[i]['订单编号']] = true  
 						sum = sum + Number(order[i]['买家实际支付金额'])
 						succeed = succeed + 1 
 					}
@@ -106,16 +108,48 @@ class Index extends React.Component {
 				}
 			}
 
-			for (let j = 0; j < product.length; j++) { 
-				console.log(product[j])
-				// 确认为真实且成功的订单
-				if (o[product[j]['主订单编号']]) {
-					console.log(product[j]['商家编码'])
-					o[product[j]['主订单编号']].push(product[j]['商家编码'])
+			for (let k = 0; k < sku.length; k++) { 
+				const sskkuu = sku[k].sku.substring(1, sku[k].sku.length-1)
+				const price = sku[k]['进价']
+				const wrong = {
+					'01104': true,
+					'01214': true,
+					'10409': true,
+					'11108': true,
+					'11109': true,
+					'11201': true,
+				}
+
+				if(isNaN(price)) {
+					if(price && !wrong[sskkuu]) {
+						const p = sku[k]['进价'].split('+')
+						s[sskkuu] = Number(p[0]) + Number(p[1]) 
+					}
+				} else {
+					s[sskkuu] = sku[k]['进价']
 				}
 			}
-			//console.log(o)
 
+			for (let j = 0; j < product.length; j++) { 
+				// 确认为真实且成功的订单
+				const id = product[j]['主订单编号']
+				if (o[id]) {
+					const sku = product[j]['商家编码']
+					if (s[sku]) {
+						const cost = s[sku] 
+						if (o[id] === true) {
+							o[id] = cost
+						} else {
+							o[id] = o[id] + cost
+						}
+					} else {
+						error.push(product[j]['主订单编号'])
+					}
+				}
+			}
+
+			console.log(o)
+			console.log(error)
 
 			this.setState({sum, succeed, closed, fake, fakeSum})
 		}
