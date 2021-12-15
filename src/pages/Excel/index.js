@@ -1,44 +1,39 @@
 import './index.scss'
-import React from 'react'
+import React , {useState}from 'react'
 import Header from '../../components/Header'
 import Container from '../../components/Container'
 import XLSX from 'xlsx'
 
-class Index extends React.Component {
-	constructor(props) {
-		super(props)
-		this.state = {
-			isDropOver: false,
-			sum: 0,
-			succeed: 0,
-			closed: 0,
-			fake: 0,
-			fakeSum: 0
-		}
-	}
+function Index() {
+	const [isDropOver, setIsDropOver] = useState(false)
+	const [sum, setSum] = useState(0)
+	const [succeed, setSucceed] = useState(0)
+	const [closed, setClosed] = useState(0)
+	const [fake, setFake] = useState(0)
+	const [fakeSum, setFakeSum] = useState(0)
 
-	dropHandler(e) {
+	function dropHandler(e) {
 		e.preventDefault()
-		this.setState({isDropOver: false})
+		setIsDropOver(false)
 
 		if(e.dataTransfer.items.length !== 3) {
 			return
 		}
 
-		this.readFiles(e.dataTransfer.items)
+		readFiles(e.dataTransfer.items)
 	}
 
-	dragOverHandler(e) {
-		this.setState({isDropOver: true})
+	function dragOverHandler(e) {
 		e.preventDefault()
+		setIsDropOver(true)
 	}
 
-	dragLeaveHandler(e) {
-		this.setState({isDropOver: false})
+	function dragLeaveHandler(e) {
 		e.preventDefault()
+		setIsDropOver(false)
 	}
 
-	readFiles(files) {
+	function readFiles(files) {
 		let sku, order, product
 		for (let i = 0; i < files.length; i++) {
 			if (files[i].kind === 'file') {
@@ -60,17 +55,17 @@ class Index extends React.Component {
 		}
 
 		const p = [
-			this.readFile(sku),
-			this.readFile(order),
-			this.readFile(product),
+			readFile(sku),
+			readFile(order),
+			readFile(product),
 		]
 
 		Promise.all(p).then((values) => {
-			this.calc(values[0], values[1], values[2])
+			calc(values[0], values[1], values[2])
 		})
 	}
 
-	readFile(file) {
+	function readFile(file) {
 		return new Promise(resolve => {
 			const reader = new FileReader()
 			reader.addEventListener('load', (e) => {
@@ -82,7 +77,7 @@ class Index extends React.Component {
 		})
 	}
 
-	calc(sku, order, product) {
+	function calc(sku, order, product) {
 		if (order.length > 0) {
 			let sum = 0
 			let succeed = 0
@@ -95,7 +90,7 @@ class Index extends React.Component {
 
 			for (let i = 0; i < order.length; i++) { 
 				if (order[i]['订单状态'] === '交易成功') {
-					if (this.fake(order[i]['商家备忘'])) {
+					if (isFakeOrder(order[i]['商家备忘'])) {
 						fakeSum = fakeSum + Number(order[i]['买家实际支付金额'])
 						fake = fake + 1 
 					} else { // 成功订单
@@ -152,10 +147,15 @@ class Index extends React.Component {
 			console.log(error)
 
 			this.setState({sum, succeed, closed, fake, fakeSum})
+			setSum(sum)
+			setSucceed(succeed)
+			setClosed(closed)
+			setFake(fake)
+			setFakeSum(fakeSum)
 		}
 	}
 
-	fake(mark) {
+	function isFakeOrder(mark) {
 		if (mark) {
 			if(mark === '1' || mark === '2' || mark.indexOf('微博') > -1) {
 				return true
@@ -165,67 +165,52 @@ class Index extends React.Component {
 		return false
 	}
 
-	render() {
-		const { isDropOver, sum, succeed, closed, fake, fakeSum } = this.state
-		return (
-			<div className="excel">
-				<Header />
-				<Container>
-					<div className="excel-container">
-						<div className="excel-container-left">
-							<div className="excel-container-left-item">
-								<p className="excel-container-left-item-title">真实成交金额</p>
-								<p className="excel-container-left-item-value">{sum.toFixed(2)} </p>
-							</div>
-							<div className="excel-container-left-item">
-								<p className="excel-container-left-item-title">订单成交数量</p>
-								<p className="excel-container-left-item-value">{succeed}</p>
-							</div>
-							<div className="excel-container-left-item">
-								<p className="excel-container-left-item-title">订单关闭数量</p>
-								<p className="excel-container-left-item-value">{closed}</p>
-							</div>
-							<div className="excel-container-left-item">
-								<p className="excel-container-left-item-title">刷单数量</p>
-								<p className="excel-container-left-item-value">{fake}</p>
-							</div>
-							<div className="excel-container-left-item">
-								<p className="excel-container-left-item-title">刷单金额</p>
-								<p className="excel-container-left-item-value">{fakeSum}</p>
-							</div>
+	return (
+		<div className="excel">
+			<Header />
+			<Container>
+				<div className="excel-container">
+					<div className="excel-container-left">
+						<div className="excel-container-left-item">
+							<p className="excel-container-left-item-title">真实成交金额</p>
+							<p className="excel-container-left-item-value">{sum.toFixed(2)} </p>
 						</div>
-						<div className="excel-container-right">
-							{
-								/*
-							<label className="excel-container-right-upload">
-								<input 
-									onChange={(e) => this.readFile(e)}
-									type="file"
-									accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
-								/>
-							选择文件
-							</label>
-								*/
-							}
-							<div 
-								style={isDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff'} : {}}
-								className="excel-container-right-upload"
-								onDrop={(e) => this.dropHandler(e)} 
-								onDragOver={(e) => this.dragOverHandler(e)}
-								onDragLeave={(e) => this.dragLeaveHandler(e)}
-							>
-								<p>把三个文件拖到这里:</p>
-								<p>淘宝上下载的两个原始表格</p>
-								<p>1. xlsx 后缀的表格重命名为 order.xlsx</p>
-								<p>2. csv 后缀的表格导出到 xlsx 并重命名为 product.xlsx</p>
-								<p>3. 命名为 sku.xlsx 的 sku 表格</p>
-							</div>
+						<div className="excel-container-left-item">
+							<p className="excel-container-left-item-title">订单成交数量</p>
+							<p className="excel-container-left-item-value">{succeed}</p>
+						</div>
+						<div className="excel-container-left-item">
+							<p className="excel-container-left-item-title">订单关闭数量</p>
+							<p className="excel-container-left-item-value">{closed}</p>
+						</div>
+						<div className="excel-container-left-item">
+							<p className="excel-container-left-item-title">刷单数量</p>
+							<p className="excel-container-left-item-value">{fake}</p>
+						</div>
+						<div className="excel-container-left-item">
+							<p className="excel-container-left-item-title">刷单金额</p>
+							<p className="excel-container-left-item-value">{fakeSum}</p>
 						</div>
 					</div>
-				</Container>
-			</div>
-		)
-	}
+					<div className="excel-container-right">
+						<div 
+							style={isDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff'} : {}}
+							className="excel-container-right-upload"
+							onDrop={(e) => dropHandler(e)} 
+							onDragOver={(e) => dragOverHandler(e)}
+							onDragLeave={(e) => dragLeaveHandler(e)}
+						>
+							<p>把三个文件拖到这里:</p>
+							<p>淘宝上下载的两个原始表格</p>
+							<p>1. xlsx 后缀的表格重命名为 order.xlsx</p>
+							<p>2. csv 后缀的表格导出到 xlsx 并重命名为 product.xlsx</p>
+							<p>3. 命名为 sku.xlsx 的 sku 表格</p>
+						</div>
+					</div>
+				</div>
+			</Container>
+		</div>
+	)
 }
 
 export default Index

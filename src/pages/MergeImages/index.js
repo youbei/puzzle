@@ -56,7 +56,6 @@ function Index() {
 	}
 
 	function merge() {
-		console.log(imageList)
 		if (imageList.length === 0) {
 			return
 		}
