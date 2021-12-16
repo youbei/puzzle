@@ -146,7 +146,6 @@ function Index() {
 			console.log(o)
 			console.log(error)
 
-			this.setState({sum, succeed, closed, fake, fakeSum})
 			setSum(sum)
 			setSucceed(succeed)
 			setClosed(closed)
