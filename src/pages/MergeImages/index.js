@@ -1,66 +1,32 @@
 import './index.scss'
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useMemo} from 'react'
 import Header from '../../components/Header'
 import Container from '../../components/Container'
 
 const TOTAL_WIDTH = 750
 const COLUMN = 3 
 const PADDING = 10 
-let imageList = [] 
 
 function Index() {
+	const [imageList, setImageList] = useState([])
 	const [isDropOver, setIsDropOver] = useState(false)
 	const [totalWidth, setTotalWidth] = useState(TOTAL_WIDTH)
 	const [column, setColumn] = useState(COLUMN)
 	const [padding, setPadding] = useState(PADDING)
-	useEffect(() => merge(), [totalWidth, column, padding])
 
-	function dropHandler(e) {
-		e.preventDefault()
-		setIsDropOver(false)
-		imageList = [] 
-		let p = []
-
-		if(!validate()) {
-			reset()
-			return
+	const isValid = useMemo(() => {
+		if(Number(totalWidth) < 1 || Number(totalWidth) > 9999 || Number(column) < 1 || Number(column) > 9 || Number(padding) < 0 || Number(padding) > 20 ) {
+			return false
 		}
+		return true
+	}, [totalWidth, column, padding])
 
-		removeCanvas()
-
-		for (let i = 0; i < e.dataTransfer.items.length; i++) {
-			if (e.dataTransfer.items[i].kind === 'file' && e.dataTransfer.items[i].type.match('^image/')) {
-				const file = e.dataTransfer.items[i].getAsFile()
-				p.push(processImages(file))
-			}
-		}
-
-		Promise.all(p).then((list) => {
-			imageList = list 
-			merge()
-		})
-	}
-
-	function processImages(file) {
-		return new Promise(resolve => {
-			const reader = new FileReader()
-			reader.addEventListener('load', () => {
-				const img = new Image()
-				img.src = reader.result
-				img.addEventListener('load', () => {
-					resolve(img)
-				})
-			}, false)
-			reader.readAsDataURL(file)
-		})
-	}
-
-	function merge() {
+	useEffect(() => {
 		if (imageList.length === 0) {
 			return
 		}
 
-		if (!validate()) {
+		if (!isValid) {
 			return
 		}
 
@@ -97,21 +63,42 @@ function Index() {
 				adjustedHeight // 图片高度缩小至多少像素
 			)
 		})
-	}
+	}, [imageList, totalWidth, column, padding, isValid])
 
-	function validate() {
-		if(
-			Number(totalWidth) < 1 
-		|| Number(totalWidth) > 9999 
-		|| Number(column) < 1 
-		|| Number(column) > 9
-		|| Number(padding) < 0
-		|| Number(padding) > 20 
-		) {
-			return false
+	function dropHandler(e) {
+		e.preventDefault()
+		setIsDropOver(false)
+		setImageList([])
+		let p = []
+
+		if(!isValid) {
+			reset()
 		}
 
-		return true
+		removeCanvas()
+
+		for (let i = 0; i < e.dataTransfer.items.length; i++) {
+			if (e.dataTransfer.items[i].kind === 'file' && e.dataTransfer.items[i].type.match('^image/')) {
+				const file = e.dataTransfer.items[i].getAsFile()
+				p.push(processImages(file))
+			}
+		}
+
+		Promise.all(p).then(list => setImageList(list))
+	}
+
+	function processImages(file) {
+		return new Promise(resolve => {
+			const reader = new FileReader()
+			reader.addEventListener('load', () => {
+				const img = new Image()
+				img.src = reader.result
+				img.addEventListener('load', () => {
+					resolve(img)
+				})
+			}, false)
+			reader.readAsDataURL(file)
+		})
 	}
 
 	function reset() {
