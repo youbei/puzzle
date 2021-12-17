@@ -11,6 +11,7 @@ function Index() {
 	const [closed, setClosed] = useState(0)
 	const [fake, setFake] = useState(0)
 	const [fakeSum, setFakeSum] = useState(0)
+	const [totalCost, setTotalCost] = useState(0)
 
 	function dropHandler(e) {
 		e.preventDefault()
@@ -84,8 +85,10 @@ function Index() {
 			let closed = 0
 			let fake = 0
 			let fakeSum = 0
-			let error = []
-			let o = {} 
+			let error = {}
+			let missingSku = {} 
+			let validOrder = {} 
+			let totalCost = 0
 			let s = {} 
 
 			for (let i = 0; i < order.length; i++) { 
@@ -94,7 +97,7 @@ function Index() {
 						fakeSum = fakeSum + Number(order[i]['买家实际支付金额'])
 						fake = fake + 1 
 					} else { // 成功订单
-						o[order[i]['订单编号']] = true  
+						validOrder[order[i]['订单编号']] = true  
 						sum = sum + Number(order[i]['买家实际支付金额'])
 						succeed = succeed + 1 
 					}
@@ -104,46 +107,36 @@ function Index() {
 			}
 
 			for (let k = 0; k < sku.length; k++) { 
-				const sskkuu = sku[k].sku.substring(1, sku[k].sku.length-1)
-				const price = sku[k]['进价']
-				const wrong = {
-					'01104': true,
-					'01214': true,
-					'10409': true,
-					'11108': true,
-					'11109': true,
-					'11201': true,
-				}
-
-				if(isNaN(price)) {
-					if(price && !wrong[sskkuu]) {
-						const p = sku[k]['进价'].split('+')
-						s[sskkuu] = Number(p[0]) + Number(p[1]) 
+				const sskkuu = String(sku[k]['商品编码'])
+				if (sskkuu !== 'undefined') {
+					const cost = sku[k]['进价'] 
+					const shipping = sku[k]['运费'] || 7
+					if(cost) {
+						s[sskkuu] = cost + shipping 
+					} else {
+						missingSku[sskkuu] = true
 					}
-				} else {
-					s[sskkuu] = sku[k]['进价']
 				}
 			}
 
 			for (let j = 0; j < product.length; j++) { 
-				// 确认为真实且成功的订单
 				const id = product[j]['主订单编号']
-				if (o[id]) {
-					const sku = product[j]['商家编码']
-					if (s[sku]) {
-						const cost = s[sku] 
-						if (o[id] === true) {
-							o[id] = cost
-						} else {
-							o[id] = o[id] + cost
-						}
+				// 确认为真实且成功的订单
+				if (validOrder[id]) {
+					let sku = String(product[j]['商家编码'])
+					if (sku === 'null') {
+						error[id] = true
 					} else {
-						error.push(product[j]['主订单编号'])
+						sku = sku.split('-')[0]
+						if(s[sku]) {
+							totalCost = totalCost + s[sku]
+						} else {
+							missingSku[sku] = true
+						}
 					}
 				}
 			}
-
-			console.log(o)
+			console.log(missingSku)
 			console.log(error)
 
 			setSum(sum)
@@ -151,6 +144,7 @@ function Index() {
 			setClosed(closed)
 			setFake(fake)
 			setFakeSum(fakeSum)
+			setTotalCost(totalCost)
 		}
 	}
 
@@ -189,6 +183,10 @@ function Index() {
 						<div className="excel-container-left-item">
 							<p className="excel-container-left-item-title">刷单金额</p>
 							<p className="excel-container-left-item-value">{fakeSum}</p>
+						</div>
+						<div className="excel-container-left-item">
+							<p className="excel-container-left-item-title">衣物成本 + 运费</p>
+							<p className="excel-container-left-item-value">{totalCost.toFixed(2)}</p>
 						</div>
 					</div>
 					<div className="excel-container-right">
