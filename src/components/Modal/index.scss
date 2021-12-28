@@ -1,0 +1,22 @@
+.modal {
+    .modal-overlay {
+        z-index: 999;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        .modal-container {
+            box-sizing: border-box;
+            border: 1px solid #000;
+            background-color: #fff;
+            overflow: hidden;
+            z-index: 1024;
+            display: block;
+        }
+    }
+}
