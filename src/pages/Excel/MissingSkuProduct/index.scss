@@ -1,4 +1,4 @@
-.missing-sku-order {
+.missing-sku-product {
     overflow-y: auto;
     width: 100%;
     height: 100%;
@@ -15,23 +15,11 @@
         width: 100%;
         box-sizing: border-box;
         border-bottom: 1px solid #000;
+        height: 60px;
+        line-height: 60px;
+        padding: 0 20px;
         &:last-child {
             border: none;
-        }
-        &-left {
-            height: 60px;
-            line-height: 60px;
-            padding: 0 20px;
-            box-sizing: border-box;
-            border-right: 1px solid #000;
-            width: 220px;
-        }
-        &-right {
-            height: 60px;
-            line-height: 60px;
-            padding: 0 20px;
-            box-sizing: border-box;
-            flex: 1 0 0;
         }
     }
 }

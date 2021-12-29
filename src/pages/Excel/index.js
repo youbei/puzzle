@@ -4,7 +4,9 @@ import Header from '../../components/Header'
 import Container from '../../components/Container'
 import MissingSku from './MissingSku'
 import MissingSkuOrder from './MissingSkuOrder'
+import MissingSkuProduct from './MissingSkuProduct'
 import ReturnRatio from './ReturnRatio'
+import UnpaidOrder from './UnpaidOrder'
 import XLSX from 'xlsx'
 
 function Index() {
@@ -14,20 +16,24 @@ function Index() {
 	const [succeed, setSucceed] = useState(0)
 	const [closed, setClosed] = useState(0)
 	const [orderDetail, setOrderDetail] = useState({})
+	const [unpaidOrder, setUnpaidOrder] = useState({})
 	const [fake, setFake] = useState(0)
 	const [fakeSum, setFakeSum] = useState(0)
 	const [totalCost, setTotalCost] = useState(0)
-	const [missingSku, setMissingSku] = useState(0)
-	const [missingSkuOrder, setMissingSkuOrder] = useState(0)
+	const [missingSku, setMissingSku] = useState({})
+	const [missingSkuOrder, setMissingSkuOrder] = useState({})
+	const [missingSkuProduct, setMissingSkuProduct] = useState({})
 	const [showMissingSku, setShowMissingSku] = useState(false)
 	const [showMissingSkuOrder, setShowMissingSkuOrder] = useState(false)
+	const [showMissingSkuProduct, setShowMissingSkuProduct] = useState(false)
 	const [showReturnRatio, setShowReturnRatio] = useState(false)
+	const [showUnpaidOrder, setShowUnpaidOrder] = useState(false)
 
 	function dropHandler(e) {
 		e.preventDefault()
 		setIsDropOver(false)
 
-		if (e.dataTransfer.items.length !== 3) {
+		if (e.dataTransfer.items.length !== 4) {
 			return
 		}
 
@@ -37,6 +43,8 @@ function Index() {
 	function dragOverHandler(e) {
 		e.preventDefault()
 		setIsDropOver(true)
+		setHasFiles(false)
+
 	}
 
 	function dragLeaveHandler(e) {
@@ -45,35 +53,38 @@ function Index() {
 	}
 
 	function readFiles(files) {
-		let sku, order, product
+		let skuSheet, orderSheet, productSheet, returnSheet
 		for (let i = 0; i < files.length; i++) {
 			if (files[i].kind === 'file') {
 				const file = files[i].getAsFile()
 				if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
 					if (file.name === 'sku.xlsx') {
-						sku = file
+						skuSheet = file
 					} else if (file.name === 'order.xlsx') {
-						order = file
+						orderSheet = file
 					} else if (file.name === 'product.xlsx') {
-						product = file
+						productSheet = file
+					} else if (file.name === 'return.xlsx') {
+						returnSheet = file
 					}
 				}
 			}
 		}
 
-		if (!sku || !order || !product) {
+		if (!skuSheet || !orderSheet || !productSheet || !returnSheet) {
 			return
 		}
 
 		const p = [
-			readFile(sku),
-			readFile(order),
-			readFile(product),
+			readFile(skuSheet),
+			readFile(orderSheet),
+			readFile(productSheet),
+			readFile(returnSheet),
 		]
 
 		Promise.all(p).then((values) => {
 			setHasFiles(true)
-			calc(values[0], values[1], values[2])
+			calc(values[0], values[1], values[2], values[3])
 		})
 	}
 
@@ -89,7 +100,7 @@ function Index() {
 		})
 	}
 
-	function calc(sku, order, product) {
+	function calc(skuSheet, orderSheet, productSheet, returnSheet) {
 		let sum = 0
 		let succeed = 0
 		let closed = 0
@@ -98,53 +109,80 @@ function Index() {
 		let fakeOrder = {}
 		let missingSkuOrder = {}
 		let missingSku = {}
+		let missingSkuProduct = {}
 		let totalCost = 0
 		let products = {}
+		let unpaidOrder = {}
 		let orderDetail = {}
+		let returnDetail = {}
 
-		for (let i = 0; i < order.length; i++) {
-			if (order[i]['订单状态'] === '交易成功') {
-				if (isFakeOrder(order[i]['商家备忘'])) {
-					fakeOrder[order[i]['订单编号']] = true
-				}
+		for (let i = 0; i < orderSheet.length; i++) {
+			const id = orderSheet[i]['订单编号']
+
+			if (isFakeOrder(orderSheet[i]['商家备忘'])) {
+				fakeOrder[id] = true
+			}
+
+			if (orderSheet[i]['订单关闭原因'] === '买家未付款') {
+				unpaidOrder[id] = orderSheet[i]
 			}
 		}
 
-		for (let k = 0; k < sku.length; k++) {
-			const sskkuu = String(sku[k]['商品编码'])
-			if (sskkuu !== 'undefined') {
-				const cost = sku[k]['进价']
-				const shipping = sku[k]['运费'] || 7
+		for (let l = 0; l < returnSheet.length; l++) {
+			const title = returnSheet[l]['宝贝标题']
+			returnDetail[returnSheet[l]['订单编号']] = {
+				payment: returnSheet[l]['买家实际支付金额'],
+				title,
+				return: returnSheet[l]['买家退款金额'],
+				sku: title.slice(title.length - 5)
+			}
+		}
+
+
+		for (let k = 0; k < skuSheet.length; k++) {
+			const sku = String(skuSheet[k]['商品编码'])
+			if (sku !== 'undefined') {
+				const cost = skuSheet[k]['进价']
+				const shipping = skuSheet[k]['运费'] || 7
 				if (cost) {
-					products[sskkuu] = {
+					products[sku] = {
 						cost: cost + shipping,
-						title: sku[k]['商品简称']
+						title: skuSheet[k]['商品简称']
 					}
 				} else {
-					missingSku[sskkuu] = sku[k]['商品简称']
+					missingSku[sku] = skuSheet[k]['商品简称']
 				}
 			}
 		}
 
-		for (let j = 0; j < product.length; j++) {
-			const id = product[j]['主订单编号']
-			let sku = String(product[j]['商家编码'])
-			const payment = Number(product[j]['买家实际支付金额'])
-			const title = product[j]['标题']
+		for (let j = 0; j < productSheet.length; j++) {
+			const id = productSheet[j]['主订单编号']
+			let longSku = String(productSheet[j]['商家编码'])
+			let sku = String(productSheet[j]['商家编码']).split('-')[0]
+			const payment = Number(productSheet[j]['买家实际支付金额'])
+			const title = productSheet[j]['标题']
 
 			if (fakeOrder[id]) { // 刷单
 				fakeSum = fakeSum + payment
 				fake = fake + 1
 			} else { // 真实成交
-				if (sku === 'null') {
+				if (longSku === 'null') {
 					if (missingSkuOrder[id]) {
 						missingSkuOrder[id].push(title)
 					} else {
 						missingSkuOrder[id] = [title]
 					}
-				} else {
-					sku = sku.split('-')[0]
+					missingSkuProduct[title] = true
 
+					const s = title.slice(title.length - 5)
+					if (isNaN(Number(s))) { // 商品标题无sku
+						sku = null
+					} else { // 获取到商品标题上的sku
+						sku = s
+					}
+				}
+
+				if (sku) {
 					if (!orderDetail[sku]) {
 						orderDetail[sku] = {
 							total: 0,
@@ -154,21 +192,39 @@ function Index() {
 						}
 					}
 
-					if (product[j]['订单状态'] === '交易成功') {
-
-						// 成交总额
-						sum = sum + payment
-
-						// 宝贝成交数量
-						succeed = succeed + 1
-						orderDetail[sku].succeed = orderDetail[sku].succeed + 1
-						orderDetail[sku].total = orderDetail[sku].total + 1
-
-						// 计算成本
-						if (products[sku]) {
-							totalCost = totalCost + products[sku].cost
+					if (productSheet[j]['订单状态'] === '交易成功') {
+						// 在退款表里再筛选一遍
+						if (returnDetail[id]) {
+							const sku = returnDetail[id].sku
+							if (!orderDetail[sku]) {
+								orderDetail[sku] = {
+									total: 0,
+									succeed: 0,
+									closed: 0,
+									title: products[sku] ? products[sku].title : title
+								}
+							}
+							closed = closed + 1
+							orderDetail[sku].closed = orderDetail[sku].closed + 1
+							orderDetail[sku].total = orderDetail[sku].total + 1
 						} else {
-							missingSku[sku] = product[j]['标题']
+							// 成交总额
+							sum = sum + payment
+
+							// 宝贝成交数量
+							succeed = succeed + 1
+							orderDetail[sku].succeed = orderDetail[sku].succeed + 1
+							orderDetail[sku].total = orderDetail[sku].total + 1
+
+							// 计算成本
+							if (products[sku]) {
+								totalCost = totalCost + products[sku].cost
+							} else if (products[longSku]) {
+								totalCost = totalCost + products[longSku].cost
+							} else {
+								missingSku[sku] = productSheet[j]['标题']
+								missingSkuProduct[productSheet[j]['标题']] = true
+							}
 						}
 					} else {
 						closed = closed + 1
@@ -179,7 +235,9 @@ function Index() {
 			}
 		}
 
+		setMissingSkuProduct(missingSkuProduct)
 		setOrderDetail(orderDetail)
+		setUnpaidOrder(unpaidOrder)
 		setSum(sum)
 		setSucceed(succeed)
 		setClosed(closed)
@@ -226,19 +284,19 @@ function Index() {
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">真实成交金额</p>
-					<p className="excel-container-left-item-value">{sum.toFixed(2)} </p>
+					<p className="excel-container-left-item-value">{sum.toFixed(0)} </p>
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">刷单金额</p>
-					<p className="excel-container-left-item-value">{fakeSum.toFixed(2)}</p>
+					<p className="excel-container-left-item-value">{fakeSum.toFixed(0)}</p>
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">衣物成本 + 运费</p>
-					<p className="excel-container-left-item-value">{totalCost.toFixed(2)}</p>
+					<p className="excel-container-left-item-value">{totalCost.toFixed(0)}</p>
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">毛利</p>
-					<p className="excel-container-left-item-value">{(sum - totalCost).toFixed(2)}</p>
+					<p className="excel-container-left-item-value">{(sum - totalCost).toFixed(0)}</p>
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">退货率</p>
@@ -252,7 +310,18 @@ function Index() {
 					>{returnRatio}</p>
 				</div>
 				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">缺失的 sku</p>
+					<p className="excel-container-left-item-title">拍下未支付的订单</p>
+					<p
+						className={`excel-container-left-item-value${Object.keys(unpaidOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
+						onClick={() => {
+							if (Object.keys(unpaidOrder).length > 0) {
+								setShowUnpaidOrder(true)
+							}
+						}}
+					>{Object.keys(unpaidOrder).length}</p>
+				</div>
+				<div className="excel-container-left-item">
+					<p className="excel-container-left-item-title">错误或没有价格的 sku</p>
 					<p
 						className={`excel-container-left-item-value${Object.keys(missingSku).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
@@ -263,7 +332,7 @@ function Index() {
 					>{Object.keys(missingSku).length}</p>
 				</div>
 				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">含有缺失 sku 的订单</p>
+					<p className="excel-container-left-item-title">含有错误 sku 的订单</p>
 					<p
 						className={`excel-container-left-item-value${Object.keys(missingSkuOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
@@ -272,6 +341,17 @@ function Index() {
 							}
 						}}
 					>{Object.keys(missingSkuOrder).length}</p>
+				</div>
+				<div className="excel-container-left-item">
+					<p className="excel-container-left-item-title">含有错误 sku 的宝贝</p>
+					<p
+						className={`excel-container-left-item-value${Object.keys(missingSkuProduct).length > 0 ? ' excel-container-left-item-hover' : ''}`}
+						onClick={() => {
+							if (Object.keys(missingSkuProduct).length > 0) {
+								setShowMissingSkuProduct(true)
+							}
+						}}
+					>{Object.keys(missingSkuProduct).length}</p>
 				</div>
 			</>
 		)
@@ -284,6 +364,8 @@ function Index() {
 				{showReturnRatio && <ReturnRatio list={orderDetail} close={() => setShowReturnRatio(false)} />}
 				{showMissingSku && <MissingSku list={missingSku} close={() => setShowMissingSku(false)} />}
 				{showMissingSkuOrder && <MissingSkuOrder list={missingSkuOrder} close={() => setShowMissingSkuOrder(false)} />}
+				{showMissingSkuProduct && <MissingSkuProduct list={missingSkuProduct} close={() => setShowMissingSkuProduct(false)} />}
+				{showUnpaidOrder && <UnpaidOrder list={unpaidOrder} close={() => setShowUnpaidOrder(false)} />}
 				<div className="excel-container">
 					<div className="excel-container-left">
 						{buildResults()}
@@ -296,11 +378,12 @@ function Index() {
 							onDragOver={(e) => dragOverHandler(e)}
 							onDragLeave={(e) => dragLeaveHandler(e)}
 						>
-							<p>把三个文件拖到这里:</p>
-							<p>淘宝上下载的两个原始表格</p>
-							<p>1. xlsx 后缀的表格重命名为 order.xlsx</p>
-							<p>2. csv 后缀的表格导出到 xlsx 并重命名为 product.xlsx</p>
-							<p>3. 命名为 sku.xlsx 的 sku 表格</p>
+							<p>把四个个文件拖到这里:</p>
+							<p>淘宝上下载的三个原始表格</p>
+							<p>1. 重命名为 order.xlsx 的订单表格（去掉密码）</p>
+							<p>2. 重命名为 product.xlsx 的宝贝表格（将 csv 转成 xlsx）</p>
+							<p>3. 重命名为 return.xlsx 的退款表格（将 xls 转成 xlsx）</p>
+							<p>和命名为 sku.xlsx 的 sku 表格</p>
 						</div>
 					</div>
 				</div>

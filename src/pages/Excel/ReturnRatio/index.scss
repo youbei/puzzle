@@ -24,7 +24,7 @@
             padding: 0 20px;
             box-sizing: border-box;
             border-right: 1px solid #000;
-            width: 600px;
+            width: 500px;
             p {
                 white-space: nowrap;
                 overflow: hidden;
@@ -38,6 +38,12 @@
             flex: 1 0 0;
         }
         &-col-3 {
+            padding: 0 20px;
+            box-sizing: border-box;
+            border-right: 1px solid #000;
+            flex: 1 0 0;
+        }
+        &-col-4 {
             padding: 0 20px;
             box-sizing: border-box;
             flex: 1 0 0;
