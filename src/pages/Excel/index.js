@@ -7,6 +7,7 @@ import MissingSkuOrder from './MissingSkuOrder'
 import MissingSkuProduct from './MissingSkuProduct'
 import ReturnRatio from './ReturnRatio'
 import UnpaidOrder from './UnpaidOrder'
+import PaidAndCancelled from './PaidAndCancelled'
 import XLSX from 'xlsx'
 
 function Index() {
@@ -17,6 +18,7 @@ function Index() {
 	const [closed, setClosed] = useState(0)
 	const [orderDetail, setOrderDetail] = useState({})
 	const [unpaidOrder, setUnpaidOrder] = useState({})
+	const [paidAndCancelled, setPaidAndCancelled] = useState({})
 	const [fake, setFake] = useState(0)
 	const [fakeSum, setFakeSum] = useState(0)
 	const [totalCost, setTotalCost] = useState(0)
@@ -28,6 +30,7 @@ function Index() {
 	const [showMissingSkuProduct, setShowMissingSkuProduct] = useState(false)
 	const [showReturnRatio, setShowReturnRatio] = useState(false)
 	const [showUnpaidOrder, setShowUnpaidOrder] = useState(false)
+	const [showPaidAndCancelled, setShowPaidAndCancelled] = useState(false)
 
 	function dropHandler(e) {
 		e.preventDefault()
@@ -113,6 +116,7 @@ function Index() {
 		let totalCost = 0
 		let products = {}
 		let unpaidOrder = {}
+		let paidAndCancelled = {}
 		let orderDetail = {}
 		let returnDetail = {}
 
@@ -125,6 +129,10 @@ function Index() {
 
 			if (orderSheet[i]['订单关闭原因'] === '买家未付款') {
 				unpaidOrder[id] = orderSheet[i]
+			} else {
+				if (orderSheet[i]['发货时间'] === 'null') {
+					paidAndCancelled[id] = orderSheet[i]
+				}
 			}
 		}
 
@@ -165,7 +173,7 @@ function Index() {
 			if (fakeOrder[id]) { // 刷单
 				fakeSum = fakeSum + payment
 				fake = fake + 1
-			} else { // 真实成交
+			} else if (!paidAndCancelled[id]) { // 真实成交并且不是付款了未发货就退款的
 				if (longSku === 'null') {
 					if (missingSkuOrder[id]) {
 						missingSkuOrder[id].push(title)
@@ -238,6 +246,7 @@ function Index() {
 		setMissingSkuProduct(missingSkuProduct)
 		setOrderDetail(orderDetail)
 		setUnpaidOrder(unpaidOrder)
+		setPaidAndCancelled(paidAndCancelled)
 		setSum(sum)
 		setSucceed(succeed)
 		setClosed(closed)
@@ -321,6 +330,17 @@ function Index() {
 					>{Object.keys(unpaidOrder).length}</p>
 				</div>
 				<div className="excel-container-left-item">
+					<p className="excel-container-left-item-title">支付未发货的订单</p>
+					<p
+						className={`excel-container-left-item-value${Object.keys(paidAndCancelled).length > 0 ? ' excel-container-left-item-hover' : ''}`}
+						onClick={() => {
+							if (Object.keys(paidAndCancelled).length > 0) {
+								setShowPaidAndCancelled(true)
+							}
+						}}
+					>{Object.keys(paidAndCancelled).length}</p>
+				</div>
+				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">错误或没有价格的 sku</p>
 					<p
 						className={`excel-container-left-item-value${Object.keys(missingSku).length > 0 ? ' excel-container-left-item-hover' : ''}`}
@@ -366,6 +386,7 @@ function Index() {
 				{showMissingSkuOrder && <MissingSkuOrder list={missingSkuOrder} close={() => setShowMissingSkuOrder(false)} />}
 				{showMissingSkuProduct && <MissingSkuProduct list={missingSkuProduct} close={() => setShowMissingSkuProduct(false)} />}
 				{showUnpaidOrder && <UnpaidOrder list={unpaidOrder} close={() => setShowUnpaidOrder(false)} />}
+				{showPaidAndCancelled && <PaidAndCancelled list={paidAndCancelled} close={() => setShowPaidAndCancelled(false)} />}
 				<div className="excel-container">
 					<div className="excel-container-left">
 						{buildResults()}
