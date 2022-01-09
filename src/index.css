@@ -71,6 +71,7 @@ input::-webkit-inner-spin-button {
 html {
     width: 100%;
     min-height: 100%;
+    height: 100%;
 }
 
 body {
@@ -78,6 +79,7 @@ body {
     font-size: 100%;
     width: 100%;
     min-height: 100%;
+    height: 100%;
 }
 
 #root {

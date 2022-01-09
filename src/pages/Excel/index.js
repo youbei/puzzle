@@ -6,8 +6,7 @@ import MissingSku from './MissingSku'
 import MissingSkuOrder from './MissingSkuOrder'
 import MissingSkuProduct from './MissingSkuProduct'
 import ReturnRatio from './ReturnRatio'
-import UnpaidOrder from './UnpaidOrder'
-import PaidAndCancelled from './PaidAndCancelled'
+import OrderInfo from './OrderInfo'
 import XLSX from 'xlsx'
 
 function Index() {
@@ -19,6 +18,7 @@ function Index() {
 	const [orderDetail, setOrderDetail] = useState({})
 	const [unpaidOrder, setUnpaidOrder] = useState({})
 	const [paidAndCancelled, setPaidAndCancelled] = useState({})
+	const [validOrder, setValidOrder] = useState({})
 	const [fake, setFake] = useState(0)
 	const [fakeSum, setFakeSum] = useState(0)
 	const [totalCost, setTotalCost] = useState(0)
@@ -30,7 +30,7 @@ function Index() {
 	const [showMissingSkuProduct, setShowMissingSkuProduct] = useState(false)
 	const [showReturnRatio, setShowReturnRatio] = useState(false)
 	const [showUnpaidOrder, setShowUnpaidOrder] = useState(false)
-	const [showPaidAndCancelled, setShowPaidAndCancelled] = useState(false)
+	const [showValidOrder, setShowValidOrder] = useState(false)
 
 	function dropHandler(e) {
 		e.preventDefault()
@@ -63,13 +63,14 @@ function Index() {
 				if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
 					if (file.name === 'sku.xlsx') {
 						skuSheet = file
-					} else if (file.name === 'order.xlsx') {
-						orderSheet = file
 					} else if (file.name === 'product.xlsx') {
 						productSheet = file
-					} else if (file.name === 'return.xlsx') {
-						returnSheet = file
+					} else {
+						orderSheet = file
 					}
+				} else if (file.type === 'application/vnd.ms-excel') {
+					returnSheet = file
+
 				}
 			}
 		}
@@ -117,6 +118,7 @@ function Index() {
 		let products = {}
 		let unpaidOrder = {}
 		let paidAndCancelled = {}
+		let validOrder = {}
 		let orderDetail = {}
 		let returnDetail = {}
 
@@ -125,13 +127,13 @@ function Index() {
 
 			if (isFakeOrder(orderSheet[i]['商家备忘'])) {
 				fakeOrder[id] = true
-			}
-
-			if (orderSheet[i]['订单关闭原因'] === '买家未付款') {
-				unpaidOrder[id] = orderSheet[i]
 			} else {
-				if (orderSheet[i]['发货时间'] === 'null') {
+				if (orderSheet[i]['订单关闭原因'] === '买家未付款') {
+					unpaidOrder[id] = orderSheet[i]
+				} else if (orderSheet[i]['发货时间'] === 'null'){
 					paidAndCancelled[id] = orderSheet[i]
+				} else {
+					validOrder[id] = orderSheet[i]
 				}
 			}
 		}
@@ -247,6 +249,7 @@ function Index() {
 		setOrderDetail(orderDetail)
 		setUnpaidOrder(unpaidOrder)
 		setPaidAndCancelled(paidAndCancelled)
+		setValidOrder(validOrder)
 		setSum(sum)
 		setSucceed(succeed)
 		setClosed(closed)
@@ -319,26 +322,26 @@ function Index() {
 					>{returnRatio}</p>
 				</div>
 				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">拍下未支付的订单</p>
+					<p className="excel-container-left-item-title">无效订单</p>
 					<p
 						className={`excel-container-left-item-value${Object.keys(unpaidOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
-							if (Object.keys(unpaidOrder).length > 0) {
+							if (Object.keys({...unpaidOrder, ...paidAndCancelled}).length > 0) {
 								setShowUnpaidOrder(true)
 							}
 						}}
-					>{Object.keys(unpaidOrder).length}</p>
+					>拍下未支付: {Object.keys(unpaidOrder).length}, 支付未发货: {Object.keys(paidAndCancelled).length}</p>
 				</div>
 				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">支付未发货的订单</p>
+					<p className="excel-container-left-item-title">有效订单</p>
 					<p
-						className={`excel-container-left-item-value${Object.keys(paidAndCancelled).length > 0 ? ' excel-container-left-item-hover' : ''}`}
+						className={`excel-container-left-item-value${Object.keys(validOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
-							if (Object.keys(paidAndCancelled).length > 0) {
-								setShowPaidAndCancelled(true)
+							if (Object.keys(validOrder).length > 0) {
+								setShowValidOrder(true)
 							}
 						}}
-					>{Object.keys(paidAndCancelled).length}</p>
+					>{Object.keys(validOrder).length}</p>
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">错误或没有价格的 sku</p>
@@ -385,8 +388,8 @@ function Index() {
 				{showMissingSku && <MissingSku list={missingSku} close={() => setShowMissingSku(false)} />}
 				{showMissingSkuOrder && <MissingSkuOrder list={missingSkuOrder} close={() => setShowMissingSkuOrder(false)} />}
 				{showMissingSkuProduct && <MissingSkuProduct list={missingSkuProduct} close={() => setShowMissingSkuProduct(false)} />}
-				{showUnpaidOrder && <UnpaidOrder list={unpaidOrder} close={() => setShowUnpaidOrder(false)} />}
-				{showPaidAndCancelled && <PaidAndCancelled list={paidAndCancelled} close={() => setShowPaidAndCancelled(false)} />}
+				{showUnpaidOrder && <OrderInfo list={{...unpaidOrder, ...paidAndCancelled}} close={() => setShowUnpaidOrder(false)} />}
+				{showValidOrder && <OrderInfo list={validOrder} close={() => setShowValidOrder(false)} />}
 				<div className="excel-container">
 					<div className="excel-container-left">
 						{buildResults()}
@@ -401,10 +404,12 @@ function Index() {
 						>
 							<p>把四个个文件拖到这里:</p>
 							<p>淘宝上下载的三个原始表格</p>
-							<p>1. 重命名为 order.xlsx 的订单表格（去掉密码）</p>
+							<p>1. 原始后缀为 xlsx 的订单表格（去掉密码）</p>
 							<p>2. 重命名为 product.xlsx 的宝贝表格（将 csv 转成 xlsx）</p>
-							<p>3. 重命名为 return.xlsx 的退款表格（将 xls 转成 xlsx）</p>
+							<p>3. 退款表格</p>
 							<p>和命名为 sku.xlsx 的 sku 表格</p>
+							<p>mac中需要将 csv 转码:</p>
+							<p>iconv -f gb18030 -t utf-8 ExportOrderDetailList.csv &gt; product.csv</p>
 						</div>
 					</div>
 				</div>
