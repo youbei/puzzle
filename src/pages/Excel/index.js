@@ -148,7 +148,6 @@ function Index() {
 			}
 		}
 
-
 		for (let k = 0; k < skuSheet.length; k++) {
 			const sku = String(skuSheet[k]['商品编码'])
 			if (sku !== 'undefined') {
@@ -160,7 +159,7 @@ function Index() {
 						title: skuSheet[k]['商品简称']
 					}
 				} else {
-					missingSku[sku] = skuSheet[k]['商品简称']
+					missingSku[sku] = `${skuSheet[k]['商品简称']}(sku 表中没有写成本或运费)`
 				}
 			}
 		}
@@ -198,7 +197,7 @@ function Index() {
 							total: 0,
 							succeed: 0,
 							closed: 0,
-							title: products[sku] ? products[sku].title : title
+							title: products[sku] ? `${sku} ${products[sku].title}` : `${sku} ${title}`
 						}
 					}
 
@@ -241,6 +240,8 @@ function Index() {
 						orderDetail[sku].closed = orderDetail[sku].closed + 1
 						orderDetail[sku].total = orderDetail[sku].total + 1
 					}
+				} else { // 没有sku的情况
+					// console.log(productSheet[j])
 				}
 			}
 		}
