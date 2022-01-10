@@ -3,6 +3,7 @@
     width: 100%;
     background-color: #000;
     box-sizing: border-box;
+    position: relative;
     &-logo {
         box-sizing: border-box;
         text-align: center;
@@ -13,5 +14,13 @@
         a {
             color: #fff;
         }
+    }
+    &-login {
+        color: #fff;
+        position: absolute;
+        right: 40px;
+        top: 0;
+        line-height: 60px;
+        cursor: pointer;
     }
 }

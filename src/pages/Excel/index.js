@@ -1,5 +1,5 @@
 import './index.scss'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import Header from '../../components/Header'
 import Container from '../../components/Container'
 import MissingSku from './MissingSku'
@@ -8,8 +8,10 @@ import MissingSkuProduct from './MissingSkuProduct'
 import ReturnRatio from './ReturnRatio'
 import OrderInfo from './OrderInfo'
 import XLSX from 'xlsx'
+import { UserContext } from '../../context/user'
 
 function Index() {
+	const {user} = useContext(UserContext)
 	const [isSkuDropOver, setIsSkuDropOver] = useState(false)
 	const [isTaobaoDropOver, setIsTaobaoDropOver] = useState(false)
 	const [hasFiles, setHasFiles] = useState(false)
@@ -314,6 +316,8 @@ function Index() {
 			returnRatio = `${(closed / (succeed + closed) * 100).toFixed(2)}%`
 		}
 
+		const { isLogin } = user
+
 		return (
 			<>
 				<div className="excel-container-left-item">
@@ -328,22 +332,27 @@ function Index() {
 					<p className="excel-container-left-item-title">刷单宝贝数量</p>
 					<p className="excel-container-left-item-value">{fake}</p>
 				</div>
-				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">真实成交金额</p>
-					<p className="excel-container-left-item-value">{sum.toFixed(0)} </p>
-				</div>
-				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">刷单金额</p>
-					<p className="excel-container-left-item-value">{fakeSum.toFixed(0)}</p>
-				</div>
-				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">衣物成本 + 运费</p>
-					<p className="excel-container-left-item-value">{totalCost.toFixed(0)}</p>
-				</div>
-				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">毛利</p>
-					<p className="excel-container-left-item-value">{(sum - totalCost).toFixed(0)}</p>
-				</div>
+				{
+					isLogin &&
+					<>
+						<div className="excel-container-left-item excel-container-left-item-important">
+							<p className="excel-container-left-item-title">真实成交金额</p>
+							<p className="excel-container-left-item-value">{sum.toFixed(0)} </p>
+						</div>
+						<div className="excel-container-left-item excel-container-left-item-important">
+							<p className="excel-container-left-item-title">刷单金额</p>
+							<p className="excel-container-left-item-value">{fakeSum.toFixed(0)}</p>
+						</div>
+						<div className="excel-container-left-item excel-container-left-item-important">
+							<p className="excel-container-left-item-title">衣物成本 + 运费</p>
+							<p className="excel-container-left-item-value">{totalCost.toFixed(0)}</p>
+						</div>
+						<div className="excel-container-left-item excel-container-left-item-important">
+							<p className="excel-container-left-item-title">毛利</p>
+							<p className="excel-container-left-item-value">{(sum - totalCost).toFixed(0)}</p>
+						</div>
+					</>
+				}
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">退货率</p>
 					<p

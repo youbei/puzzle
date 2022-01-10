@@ -1,25 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import './index.css'
 import reportWebVitals from './reportWebVitals'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import MergeImages from './pages/MergeImages'
-import CropImages from './pages/CropImages'
-import Excel from './pages/Excel'
-import Home from './pages/Home'
+import App from './App'
+
 
 ReactDOM.render(
 	<React.StrictMode>
-		<BrowserRouter>
-			<Routes>
-				<Route path="/">
-					<Route index element={<Home />} />
-					<Route path="/merge" element={<MergeImages />} />
-					<Route path="/crop" element={<CropImages />} />
-					<Route path="/excel" element={<Excel />} />
-				</Route>
-			</Routes>
-		</BrowserRouter>
+		<App />
 	</React.StrictMode>,
 	document.getElementById('root')
 )
