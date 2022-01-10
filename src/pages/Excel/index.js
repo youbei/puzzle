@@ -1,5 +1,5 @@
 import './index.scss'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Header from '../../components/Header'
 import Container from '../../components/Container'
 import MissingSku from './MissingSku'
@@ -10,8 +10,10 @@ import OrderInfo from './OrderInfo'
 import XLSX from 'xlsx'
 
 function Index() {
-	const [isDropOver, setIsDropOver] = useState(false)
+	const [isSkuDropOver, setIsSkuDropOver] = useState(false)
+	const [isTaobaoDropOver, setIsTaobaoDropOver] = useState(false)
 	const [hasFiles, setHasFiles] = useState(false)
+	const [hasSku, setHasSku] = useState('')
 	const [sum, setSum] = useState(0)
 	const [succeed, setSucceed] = useState(0)
 	const [closed, setClosed] = useState(0)
@@ -32,71 +34,102 @@ function Index() {
 	const [showUnpaidOrder, setShowUnpaidOrder] = useState(false)
 	const [showValidOrder, setShowValidOrder] = useState(false)
 
-	function dropHandler(e) {
+	function skuDropHandler(e) {
 		e.preventDefault()
-		setIsDropOver(false)
-
-		if (e.dataTransfer.items.length !== 4) {
+		setIsSkuDropOver(false)
+		if (e.dataTransfer.items.length !== 1) {
 			return
 		}
+		readSku(e.dataTransfer.items)
+	}
 
+	function skuDragOverHandler(e) {
+		e.preventDefault()
+		setIsSkuDropOver(true)
+	}
+
+	function skuDragLeaveHandler(e) {
+		e.preventDefault()
+		setIsSkuDropOver(false)
+	}
+
+	function taobaoDropHandler(e) {
+		e.preventDefault()
+		setIsTaobaoDropOver(false)
+		if (e.dataTransfer.items.length !== 3 || !hasSku) {
+			return
+		}
 		readFiles(e.dataTransfer.items)
 	}
 
-	function dragOverHandler(e) {
+	function taobaoDragOverHandler(e) {
 		e.preventDefault()
-		setIsDropOver(true)
+		setIsTaobaoDropOver(true)
 		setHasFiles(false)
-
 	}
 
-	function dragLeaveHandler(e) {
+	function taobaoDragLeaveHandler(e) {
 		e.preventDefault()
-		setIsDropOver(false)
+		setIsTaobaoDropOver(false)
+	}
+
+	function readSku(files) {
+		const file = files[0].getAsFile()
+		if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+			readFile(file).then((value) => {
+				const update = `${new Date().toLocaleDateString()} ${new Date().toTimeString().split(' ')[0]}`
+				localStorage.setItem('sku', JSON.stringify(value))
+				localStorage.setItem('update', update)
+				setHasSku('update', update)
+			})
+		}
 	}
 
 	function readFiles(files) {
-		let skuSheet, orderSheet, productSheet, returnSheet
+		let orderSheet, productSheet, returnSheet
 		for (let i = 0; i < files.length; i++) {
 			if (files[i].kind === 'file') {
 				const file = files[i].getAsFile()
 				if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-					if (file.name === 'sku.xlsx') {
-						skuSheet = file
-					} else if (file.name === 'product.xlsx') {
-						productSheet = file
-					} else {
-						orderSheet = file
-					}
+					orderSheet = file
 				} else if (file.type === 'application/vnd.ms-excel') {
 					returnSheet = file
-
+				} else if (file.type === 'text/csv') {
+					productSheet = file
 				}
 			}
 		}
 
-		if (!skuSheet || !orderSheet || !productSheet || !returnSheet) {
+		if (!orderSheet || !productSheet || !returnSheet) {
 			return
 		}
 
 		const p = [
-			readFile(skuSheet),
 			readFile(orderSheet),
-			readFile(productSheet),
+			readFile(productSheet, true),
 			readFile(returnSheet),
 		]
 
+		const skuSheet = JSON.parse(localStorage.getItem('sku'))
+
 		Promise.all(p).then((values) => {
 			setHasFiles(true)
-			calc(values[0], values[1], values[2], values[3])
+			calc(values[0], values[1], values[2], skuSheet)
 		})
 	}
 
-	function readFile(file) {
+	function readFile(file, isCsv = false) {
 		return new Promise(resolve => {
 			const reader = new FileReader()
 			reader.addEventListener('load', (e) => {
-				const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' })
+				let binary = ''
+				// 读取成Uint8Array，再转换为Unicode编码（Unicode占两个字节）
+				let bytes = new Uint8Array(e.target.result)
+				var length = bytes.byteLength
+				for (let i = 0; i < length; i++) {
+					binary += String.fromCharCode(bytes[i])
+				}
+				const workbook = XLSX.read(binary, isCsv ? { type: 'binary', codepage: 936} : { type: 'binary' })
 				const xlsxData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])
 				resolve(xlsxData)
 			}, false)
@@ -104,7 +137,7 @@ function Index() {
 		})
 	}
 
-	function calc(skuSheet, orderSheet, productSheet, returnSheet) {
+	function calc(orderSheet, productSheet, returnSheet, skuSheet) {
 		let sum = 0
 		let succeed = 0
 		let closed = 0
@@ -381,6 +414,11 @@ function Index() {
 		)
 	}
 
+	useEffect(() => {
+		const hasSku = localStorage.getItem('update') ? localStorage.getItem('update') : ''
+		setHasSku(hasSku)
+	}, [hasSku])
+
 	return (
 		<div className="excel">
 			<Header />
@@ -396,21 +434,31 @@ function Index() {
 						{buildResults()}
 					</div>
 					<div className="excel-container-right">
-						<div
-							style={isDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff' } : {}}
-							className="excel-container-right-upload"
-							onDrop={(e) => dropHandler(e)}
-							onDragOver={(e) => dragOverHandler(e)}
-							onDragLeave={(e) => dragLeaveHandler(e)}
+						<div 
+							style={isSkuDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff' } : {}}
+							onDrop={(e) => skuDropHandler(e)}
+							onDragOver={(e) => skuDragOverHandler(e)}
+							onDragLeave={(e) => skuDragLeaveHandler(e)}
+							className="excel-container-right-sku"
 						>
-							<p>把四个个文件拖到这里:</p>
-							<p>淘宝上下载的三个原始表格</p>
-							<p>1. 原始后缀为 xlsx 的订单表格（去掉密码）</p>
-							<p>2. 重命名为 product.xlsx 的宝贝表格（将 csv 转成 xlsx）</p>
+							{
+								hasSku ?
+									<p>已读取 sku 表格，上次更新: {hasSku}</p> :
+									<p>没有找到 sku 表格</p>
+							}
+							<p>将 sku 表拖入这里更新</p>
+						</div>
+						<div 
+							style={isTaobaoDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff' } : {}}
+							onDrop={(e) => taobaoDropHandler(e)}
+							onDragOver={(e) => taobaoDragOverHandler(e)}
+							onDragLeave={(e) => taobaoDragLeaveHandler(e)}
+							className="excel-container-right-taobao"
+						>
+							<p>拖入淘宝下载的三个原始表格</p>
+							<p>1. 订单表格（去掉密码）</p>
+							<p>2. 宝贝表格</p>
 							<p>3. 退款表格</p>
-							<p>和命名为 sku.xlsx 的 sku 表格</p>
-							<p>mac中需要将 csv 转码:</p>
-							<p>iconv -f gb18030 -t utf-8 ExportOrderDetailList.csv &gt; product.csv</p>
 						</div>
 					</div>
 				</div>

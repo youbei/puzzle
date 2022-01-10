@@ -51,23 +51,21 @@
         &-right {
             flex: 0 0 240px;
             box-sizing: border-box;
-            &-upload {
+            p {
                 padding: 0 10px;
-                text-align: left;
-                display: block;
-                cursor: pointer;
+                line-height: 30px;
+                z-index: -1;
+            }
+            &-sku {
                 box-sizing: border-box;
-                height: 100%;
                 width: 100%;
-                font-size: 16px;
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
-                flex-direction: column;
-                p {
-                    line-height: 32px;
-                    z-index: -1;
-                }
+                height: 30%;
+                border-bottom: 1px solid #000;
+            }
+            &-taobao {
+                box-sizing: border-box;
+                width: 100%;
+                height: 70%;
             }
         }
     }
