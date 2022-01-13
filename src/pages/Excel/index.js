@@ -3,8 +3,6 @@ import React, { useState, useEffect, useContext } from 'react'
 import Header from '../../components/Header'
 import Container from '../../components/Container'
 import MissingSku from './MissingSku'
-import MissingSkuOrder from './MissingSkuOrder'
-import MissingSkuProduct from './MissingSkuProduct'
 import ReturnRatio from './ReturnRatio'
 import OrderInfo from './OrderInfo'
 import XLSX from 'xlsx'
@@ -26,12 +24,10 @@ function Index() {
 	const [fake, setFake] = useState(0)
 	const [fakeSum, setFakeSum] = useState(0)
 	const [totalCost, setTotalCost] = useState(0)
+	const [incompleteSku, setIncompleteSku] = useState({})
 	const [missingSku, setMissingSku] = useState({})
-	const [missingSkuOrder, setMissingSkuOrder] = useState({})
-	const [missingSkuProduct, setMissingSkuProduct] = useState({})
+	const [showIncompleteSku, setShowIncompleteSku] = useState(false)
 	const [showMissingSku, setShowMissingSku] = useState(false)
-	const [showMissingSkuOrder, setShowMissingSkuOrder] = useState(false)
-	const [showMissingSkuProduct, setShowMissingSkuProduct] = useState(false)
 	const [showReturnRatio, setShowReturnRatio] = useState(false)
 	const [showUnpaidOrder, setShowUnpaidOrder] = useState(false)
 	const [showValidOrder, setShowValidOrder] = useState(false)
@@ -146,9 +142,8 @@ function Index() {
 		let fake = 0
 		let fakeSum = 0
 		let fakeOrder = {}
-		let missingSkuOrder = {}
+		let incompleteSku = {}
 		let missingSku = {}
-		let missingSkuProduct = {}
 		let totalCost = 0
 		let products = {}
 		let unpaidOrder = {}
@@ -185,16 +180,16 @@ function Index() {
 
 		for (let k = 0; k < skuSheet.length; k++) {
 			const sku = String(skuSheet[k]['商品编码'])
-			if (sku !== 'undefined') {
-				const cost = skuSheet[k]['进价']
-				const shipping = skuSheet[k]['运费'] || 7
-				if (cost) {
+			const cost = skuSheet[k]['进价']
+			const shipping = skuSheet[k]['邮费']
+			if ( sku && sku !== 'undefined') {
+				if (!isNaN(cost) && !isNaN(shipping)) {
 					products[sku] = {
 						cost: cost + shipping,
 						title: skuSheet[k]['商品简称']
 					}
 				} else {
-					missingSku[sku] = `${skuSheet[k]['商品简称']}(sku 表中没有写成本或运费)`
+					incompleteSku[skuSheet[k]['商品简称']] = sku 
 				}
 			}
 		}
@@ -211,13 +206,7 @@ function Index() {
 				fake = fake + 1
 			} else if (!paidAndCancelled[id]) { // 真实成交并且不是付款了未发货就退款的
 				if (longSku === 'null') {
-					if (missingSkuOrder[id]) {
-						missingSkuOrder[id].push(title)
-					} else {
-						missingSkuOrder[id] = [title]
-					}
-					missingSkuProduct[title] = true
-
+					//missingSku[productSheet[j]['标题']] = '无 sku'
 					const s = title.slice(title.length - 5)
 					if (isNaN(Number(s))) { // 商品标题无sku
 						sku = null
@@ -265,9 +254,12 @@ function Index() {
 								totalCost = totalCost + products[sku].cost
 							} else if (products[longSku]) {
 								totalCost = totalCost + products[longSku].cost
-							} else {
-								missingSku[sku] = productSheet[j]['标题']
-								missingSkuProduct[productSheet[j]['标题']] = true
+							} else { // sku 表里找不到该 sku
+								if (missingSku[id]) {
+									missingSku[id].push(title)
+								} else {
+									missingSku[id] = [title]
+								}
 							}
 						}
 					} else {
@@ -276,12 +268,15 @@ function Index() {
 						orderDetail[sku].total = orderDetail[sku].total + 1
 					}
 				} else { // 没有sku的情况
-					// console.log(productSheet[j])
+					if (missingSku[id]) {
+						missingSku[id].push(title)
+					} else {
+						missingSku[id] = [title]
+					}
 				}
 			}
 		}
 
-		setMissingSkuProduct(missingSkuProduct)
 		setOrderDetail(orderDetail)
 		setUnpaidOrder(unpaidOrder)
 		setPaidAndCancelled(paidAndCancelled)
@@ -292,8 +287,8 @@ function Index() {
 		setFake(fake)
 		setFakeSum(fakeSum)
 		setTotalCost(totalCost)
+		setIncompleteSku(incompleteSku)
 		setMissingSku(missingSku)
-		setMissingSkuOrder(missingSkuOrder)
 	}
 
 	function isFakeOrder(mark) {
@@ -376,7 +371,7 @@ function Index() {
 					>拍下未支付: {Object.keys(unpaidOrder).length}, 支付未发货: {Object.keys(paidAndCancelled).length}</p>
 				</div>
 				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">有效订单</p>
+					<p className="excel-container-left-item-title">有效订单(含退货)</p>
 					<p
 						className={`excel-container-left-item-value${Object.keys(validOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
@@ -387,7 +382,18 @@ function Index() {
 					>{Object.keys(validOrder).length}</p>
 				</div>
 				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">错误或没有价格的 sku</p>
+					<p className="excel-container-left-item-title">sku 表里没有价格的 sku</p>
+					<p
+						className={`excel-container-left-item-value${Object.keys(incompleteSku).length > 0 ? ' excel-container-left-item-hover' : ''}`}
+						onClick={() => {
+							if (Object.keys(incompleteSku).length > 0) {
+								setShowIncompleteSku(true)
+							}
+						}}
+					>{Object.keys(incompleteSku).length}</p>
+				</div>
+				<div className="excel-container-left-item">
+					<p className="excel-container-left-item-title">没有计算成本的宝贝</p>
 					<p
 						className={`excel-container-left-item-value${Object.keys(missingSku).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
@@ -396,28 +402,6 @@ function Index() {
 							}
 						}}
 					>{Object.keys(missingSku).length}</p>
-				</div>
-				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">含有错误 sku 的订单</p>
-					<p
-						className={`excel-container-left-item-value${Object.keys(missingSkuOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
-						onClick={() => {
-							if (Object.keys(missingSkuOrder).length > 0) {
-								setShowMissingSkuOrder(true)
-							}
-						}}
-					>{Object.keys(missingSkuOrder).length}</p>
-				</div>
-				<div className="excel-container-left-item">
-					<p className="excel-container-left-item-title">含有错误 sku 的宝贝</p>
-					<p
-						className={`excel-container-left-item-value${Object.keys(missingSkuProduct).length > 0 ? ' excel-container-left-item-hover' : ''}`}
-						onClick={() => {
-							if (Object.keys(missingSkuProduct).length > 0) {
-								setShowMissingSkuProduct(true)
-							}
-						}}
-					>{Object.keys(missingSkuProduct).length}</p>
 				</div>
 			</>
 		)
@@ -433,9 +417,8 @@ function Index() {
 			<Header />
 			<Container>
 				{showReturnRatio && <ReturnRatio list={orderDetail} close={() => setShowReturnRatio(false)} />}
+				{showIncompleteSku && <MissingSku list={incompleteSku} close={() => setShowIncompleteSku(false)} />}
 				{showMissingSku && <MissingSku list={missingSku} close={() => setShowMissingSku(false)} />}
-				{showMissingSkuOrder && <MissingSkuOrder list={missingSkuOrder} close={() => setShowMissingSkuOrder(false)} />}
-				{showMissingSkuProduct && <MissingSkuProduct list={missingSkuProduct} close={() => setShowMissingSkuProduct(false)} />}
 				{showUnpaidOrder && <OrderInfo list={{...unpaidOrder, ...paidAndCancelled}} close={() => setShowUnpaidOrder(false)} />}
 				{showValidOrder && <OrderInfo list={validOrder} close={() => setShowValidOrder(false)} />}
 				<div className="excel-container">
