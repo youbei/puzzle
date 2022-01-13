@@ -4,6 +4,7 @@ import './index.scss'
 
 function Index(props) {
 	const { close, list } = props
+	console.log(list)
 	const keys = Object.keys(list)
 	let products = {}
 
@@ -23,20 +24,26 @@ function Index(props) {
 		<Modal close={close} style={{ width: '820px', height: productsKeys.length >= 10 ? '602px' : `${productsKeys.length * 60 + 62}px` }}>
 			<div className="missing-sku">
 				<div className="missing-sku-item missing-sku-item-black">
-					<div className="missing-sku-item-left">
+					<div className="missing-sku-item-col-0">
 						<p>宝贝名称</p>
 					</div>
-					<div className="missing-sku-item-right">
+					<div className="missing-sku-item-col-1">
+						<p>sku</p>
+					</div>
+					<div className="missing-sku-item-col-2">
 						<p>数量</p>
 					</div>
 				</div>
 				{
 					productsKeys.map((item, index) =>
 						<div key={index} className="missing-sku-item">
-							<div className="missing-sku-item-left">
+							<div className="missing-sku-item-col-0">
 								<p>{item}</p>
 							</div>
-							<div className="missing-sku-item-right">
+							<div className="missing-sku-item-col-1">
+								<p>sku</p>
+							</div>
+							<div className="missing-sku-item-col-2">
 								<p>{products[item]}</p>
 							</div>
 						</div>
