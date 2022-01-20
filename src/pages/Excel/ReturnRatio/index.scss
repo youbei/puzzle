@@ -20,11 +20,22 @@
         .white-line {
             border-right: 1px solid #fff;
         }
-        &-col-1 {
-            padding: 0 20px;
+        &-col-0 {
+            padding: 0 10px;
             box-sizing: border-box;
             border-right: 1px solid #000;
-            width: 500px;
+            flex: 0 0 10%;
+            p {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        &-col-1 {
+            padding: 0 10px;
+            box-sizing: border-box;
+            border-right: 1px solid #000;
+            flex: 0 0 60%;
             p {
                 white-space: nowrap;
                 overflow: hidden;
@@ -32,21 +43,21 @@
             }
         }
         &-col-2 {
-            padding: 0 20px;
+            padding: 0 10px;
             box-sizing: border-box;
             border-right: 1px solid #000;
-            flex: 1 0 0;
+            flex: 0 0 8%;
         }
         &-col-3 {
-            padding: 0 20px;
+            padding: 0 10px;
             box-sizing: border-box;
             border-right: 1px solid #000;
-            flex: 1 0 0;
+            flex: 0 0 8%;
         }
         &-col-4 {
-            padding: 0 20px;
+            padding: 0 10px;
             box-sizing: border-box;
-            flex: 1 0 0;
+            flex: 0 0 14%;
         }
     }
 }

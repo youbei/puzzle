@@ -10,6 +10,9 @@ function Index(props) {
 		<Modal close={close} style={{ width: '920px', height: '602px' }}>
 			<div className="return">
 				<div className="return-item">
+					<div className="return-item-col-0 black white-line">
+						<p>sku</p>
+					</div>
 					<div className="return-item-col-1 black white-line">
 						<p>宝贝</p>
 					</div>
@@ -26,6 +29,9 @@ function Index(props) {
 				{
 					sortByTotal.map((item, index) =>
 						<div key={index} className="return-item">
+							<div className="return-item-col-0">
+								<p>{item[0]}</p>
+							</div>
 							<div className="return-item-col-1">
 								<p>{item[1].title}</p>
 							</div>

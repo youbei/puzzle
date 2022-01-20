@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import Header from '../../components/Header'
 import Container from '../../components/Container'
 import MissingSku from './MissingSku'
+import IncompleteSku from './IncompleteSku'
 import ReturnRatio from './ReturnRatio'
 import OrderInfo from './OrderInfo'
 import XLSX from 'xlsx'
@@ -88,12 +89,14 @@ function Index() {
 		for (let i = 0; i < files.length; i++) {
 			if (files[i].kind === 'file') {
 				const file = files[i].getAsFile()
-				if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+				if (file.name.indexOf('.xlsx') > -1) {
 					orderSheet = file
 				} else if (file.name.indexOf('.xls') > -1) {
 					returnSheet = file
 				} else if (file.name.indexOf('.csv') > -1) {
 					productSheet = file
+				} else {
+					console.log('wrong file')
 				}
 			}
 		}
@@ -204,7 +207,7 @@ function Index() {
 			if (fakeOrder[id]) { // 刷单
 				fakeSum = fakeSum + payment
 				fake = fake + 1
-			} else if (!paidAndCancelled[id]) { // 真实成交并且不是付款了未发货就退款的
+			} else if (!paidAndCancelled[id] && !unpaidOrder[id]) { // 真实成交并且不是付款了未发货就退款的
 				if (longSku === 'null') {
 					const s = title.slice(title.length - 5)
 					if (isNaN(Number(s))) { // 商品标题无sku
@@ -220,7 +223,7 @@ function Index() {
 							total: 0,
 							succeed: 0,
 							closed: 0,
-							title: products[sku] ? `${sku} ${products[sku].title}` : `${sku} ${title}`
+							title: products[sku] ? products[sku].title : title
 						}
 					}
 
@@ -255,9 +258,9 @@ function Index() {
 								totalCost = totalCost + products[longSku].cost
 							} else { // sku 表里找不到该 sku
 								if (missingSku[id]) {
-									missingSku[id].push({ title, sku })
+									missingSku[id].push({ title, sku, reason: 'sku 表里找不到' })
 								} else {
-									missingSku[id] = [{ title, sku }]
+									missingSku[id] = [{ title, sku, reason: 'sku 表里找不到' }]
 								}
 							}
 						}
@@ -268,9 +271,9 @@ function Index() {
 					}
 				} else { // 没有sku的情况
 					if (missingSku[id]) {
-						missingSku[id].push({ title, sku })
+						missingSku[id].push({ title, sku, reason: '宝贝无 sku' })
 					} else {
-						missingSku[id] = [{ title, sku }]
+						missingSku[id] = [{ title, sku, reason: '宝贝无 sku' }]
 					}
 				}
 			}
@@ -367,7 +370,7 @@ function Index() {
 								setShowUnpaidOrder(true)
 							}
 						}}
-					>拍下未支付: {Object.keys(unpaidOrder).length}, 支付未发货: {Object.keys(paidAndCancelled).length}</p>
+					>拍下未支付: {Object.keys(unpaidOrder).length}, 仅退款: {Object.keys(paidAndCancelled).length}</p>
 				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">有效订单(含退货)</p>
@@ -416,7 +419,7 @@ function Index() {
 			<Header />
 			<Container>
 				{showReturnRatio && <ReturnRatio list={orderDetail} close={() => setShowReturnRatio(false)} />}
-				{showIncompleteSku && <MissingSku list={incompleteSku} close={() => setShowIncompleteSku(false)} />}
+				{showIncompleteSku && <IncompleteSku list={incompleteSku} close={() => setShowIncompleteSku(false)} />}
 				{showMissingSku && <MissingSku list={missingSku} close={() => setShowMissingSku(false)} />}
 				{showUnpaidOrder && <OrderInfo list={{ ...unpaidOrder, ...paidAndCancelled }} close={() => setShowUnpaidOrder(false)} />}
 				{showValidOrder && <OrderInfo list={validOrder} close={() => setShowValidOrder(false)} />}

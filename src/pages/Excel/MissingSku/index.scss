@@ -14,25 +14,34 @@
             background-color: #000;
             color: #fff;
         }
+        &-black-line {
+            border-right: 1px solid #000;
+        }
+        &-white-line {
+            border-right: 1px solid #fff;
+        }
         &:last-child {
             border: none;
         }
         &-col-0 {
             padding: 0 20px;
             box-sizing: border-box;
-            border-right: 1px solid #000;
-            flex: 0 0 70%;
+            flex: 0 0 60%;
         }
         &-col-1 {
             padding: 0 20px;
             box-sizing: border-box;
-            border-right: 1px solid #000;
-            flex: 0 0 15%;
+            flex: 0 0 10%;
         }
         &-col-2 {
             padding: 0 20px;
             box-sizing: border-box;
-            flex: 0 0 15%;
+            flex: 0 0 10%;
+        }
+        &-col-3 {
+            padding: 0 20px;
+            box-sizing: border-box;
+            flex: 0 0 20%;
         }
     }
 }
