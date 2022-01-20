@@ -207,7 +207,7 @@ function Index() {
 			if (fakeOrder[id]) { // 刷单
 				fakeSum = fakeSum + payment
 				fake = fake + 1
-			} else if (!paidAndCancelled[id] && !unpaidOrder[id]) { // 真实成交并且不是付款了未发货就退款的
+			} else if (!paidAndCancelled[id]) { // 真实成交并且不是付款了未发货就退款的, 宝贝表里不包含未支付的宝贝所以不考虑未支付的情况
 				if (longSku === 'null') {
 					const s = title.slice(title.length - 5)
 					if (isNaN(Number(s))) { // 商品标题无sku
@@ -308,10 +308,7 @@ function Index() {
 			return null
 		}
 
-		let returnRatio = ''
-		if (succeed + closed > 0) {
-			returnRatio = `${(closed / (succeed + closed) * 100).toFixed(2)}%`
-		}
+		const returnRatio = `${(closed / (succeed + closed) * 100).toFixed(2)}%`
 
 		const { isLogin } = user
 
