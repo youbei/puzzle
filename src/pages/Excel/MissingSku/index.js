@@ -10,10 +10,10 @@ function Index(props) {
 
 	keys.forEach((key) => {
 		list[key].forEach((item) => {
-			if (products[item]) {
-				products[item] = products[item] + 1
+			if (products[item.title]) {
+				products[item.title].number = products[item.title].number + 1
 			} else {
-				products[item] = 1
+				products[item.title] = { sku: item.sku, number: 1 }
 			}
 		})
 	})
@@ -41,10 +41,10 @@ function Index(props) {
 								<p>{item}</p>
 							</div>
 							<div className="missing-sku-item-col-1">
-								<p>sku</p>
+								<p>{products[item].sku}</p>
 							</div>
 							<div className="missing-sku-item-col-2">
-								<p>{products[item]}</p>
+								<p>{products[item].number}</p>
 							</div>
 						</div>
 					)

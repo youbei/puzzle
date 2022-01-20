@@ -9,7 +9,7 @@ import XLSX from 'xlsx'
 import { UserContext } from '../../context/user'
 
 function Index() {
-	const {user} = useContext(UserContext)
+	const { user } = useContext(UserContext)
 	const [isSkuDropOver, setIsSkuDropOver] = useState(false)
 	const [isTaobaoDropOver, setIsTaobaoDropOver] = useState(false)
 	const [hasFiles, setHasFiles] = useState(false)
@@ -90,9 +90,9 @@ function Index() {
 				const file = files[i].getAsFile()
 				if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
 					orderSheet = file
-				} else if (file.type === 'application/vnd.ms-excel') {
+				} else if (file.name.indexOf('.xls') > -1) {
 					returnSheet = file
-				} else if (file.type === 'text/csv') {
+				} else if (file.name.indexOf('.csv') > -1) {
 					productSheet = file
 				}
 			}
@@ -127,7 +127,7 @@ function Index() {
 				for (let i = 0; i < length; i++) {
 					binary += String.fromCharCode(bytes[i])
 				}
-				const workbook = XLSX.read(binary, isCsv ? { type: 'binary', codepage: 936} : { type: 'binary' })
+				const workbook = XLSX.read(binary, isCsv ? { type: 'binary', codepage: 936 } : { type: 'binary' })
 				const xlsxData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])
 				resolve(xlsxData)
 			}, false)
@@ -160,7 +160,7 @@ function Index() {
 			} else {
 				if (orderSheet[i]['订单关闭原因'] === '买家未付款') {
 					unpaidOrder[id] = orderSheet[i]
-				} else if (orderSheet[i]['发货时间'] === 'null'){
+				} else if (orderSheet[i]['发货时间'] === 'null') {
 					paidAndCancelled[id] = orderSheet[i]
 				} else {
 					validOrder[id] = orderSheet[i]
@@ -182,14 +182,14 @@ function Index() {
 			const sku = String(skuSheet[k]['商品编码'])
 			const cost = skuSheet[k]['进价']
 			const shipping = skuSheet[k]['邮费']
-			if ( sku && sku !== 'undefined') {
+			if (sku && sku !== 'undefined') {
 				if (!isNaN(cost) && !isNaN(shipping)) {
 					products[sku] = {
 						cost: cost + shipping,
 						title: skuSheet[k]['商品简称']
 					}
 				} else {
-					incompleteSku[skuSheet[k]['商品简称']] = sku 
+					incompleteSku[skuSheet[k]['商品简称']] = sku
 				}
 			}
 		}
@@ -206,7 +206,6 @@ function Index() {
 				fake = fake + 1
 			} else if (!paidAndCancelled[id]) { // 真实成交并且不是付款了未发货就退款的
 				if (longSku === 'null') {
-					//missingSku[productSheet[j]['标题']] = '无 sku'
 					const s = title.slice(title.length - 5)
 					if (isNaN(Number(s))) { // 商品标题无sku
 						sku = null
@@ -256,9 +255,9 @@ function Index() {
 								totalCost = totalCost + products[longSku].cost
 							} else { // sku 表里找不到该 sku
 								if (missingSku[id]) {
-									missingSku[id].push(title)
+									missingSku[id].push({ title, sku })
 								} else {
-									missingSku[id] = [title]
+									missingSku[id] = [{ title, sku }]
 								}
 							}
 						}
@@ -269,9 +268,9 @@ function Index() {
 					}
 				} else { // 没有sku的情况
 					if (missingSku[id]) {
-						missingSku[id].push(title)
+						missingSku[id].push({ title, sku })
 					} else {
-						missingSku[id] = [title]
+						missingSku[id] = [{ title, sku }]
 					}
 				}
 			}
@@ -327,17 +326,17 @@ function Index() {
 					<p className="excel-container-left-item-title">刷单宝贝数量</p>
 					<p className="excel-container-left-item-value">{fake}</p>
 				</div>
+				<div className="excel-container-left-item excel-container-left-item-important">
+					<p className="excel-container-left-item-title">刷单金额</p>
+					<p className="excel-container-left-item-value">{fakeSum.toFixed(0)}</p>
+				</div>
+				<div className="excel-container-left-item excel-container-left-item-important">
+					<p className="excel-container-left-item-title">真实成交金额</p>
+					<p className="excel-container-left-item-value">{sum.toFixed(0)} </p>
+				</div>
 				{
 					isLogin &&
 					<>
-						<div className="excel-container-left-item excel-container-left-item-important">
-							<p className="excel-container-left-item-title">真实成交金额</p>
-							<p className="excel-container-left-item-value">{sum.toFixed(0)} </p>
-						</div>
-						<div className="excel-container-left-item excel-container-left-item-important">
-							<p className="excel-container-left-item-title">刷单金额</p>
-							<p className="excel-container-left-item-value">{fakeSum.toFixed(0)}</p>
-						</div>
 						<div className="excel-container-left-item excel-container-left-item-important">
 							<p className="excel-container-left-item-title">衣物成本 + 运费</p>
 							<p className="excel-container-left-item-value">{totalCost.toFixed(0)}</p>
@@ -364,7 +363,7 @@ function Index() {
 					<p
 						className={`excel-container-left-item-value${Object.keys(unpaidOrder).length > 0 ? ' excel-container-left-item-hover' : ''}`}
 						onClick={() => {
-							if (Object.keys({...unpaidOrder, ...paidAndCancelled}).length > 0) {
+							if (Object.keys({ ...unpaidOrder, ...paidAndCancelled }).length > 0) {
 								setShowUnpaidOrder(true)
 							}
 						}}
@@ -419,14 +418,14 @@ function Index() {
 				{showReturnRatio && <ReturnRatio list={orderDetail} close={() => setShowReturnRatio(false)} />}
 				{showIncompleteSku && <MissingSku list={incompleteSku} close={() => setShowIncompleteSku(false)} />}
 				{showMissingSku && <MissingSku list={missingSku} close={() => setShowMissingSku(false)} />}
-				{showUnpaidOrder && <OrderInfo list={{...unpaidOrder, ...paidAndCancelled}} close={() => setShowUnpaidOrder(false)} />}
+				{showUnpaidOrder && <OrderInfo list={{ ...unpaidOrder, ...paidAndCancelled }} close={() => setShowUnpaidOrder(false)} />}
 				{showValidOrder && <OrderInfo list={validOrder} close={() => setShowValidOrder(false)} />}
 				<div className="excel-container">
 					<div className="excel-container-left">
 						{buildResults()}
 					</div>
 					<div className="excel-container-right">
-						<div 
+						<div
 							style={isSkuDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff' } : {}}
 							onDrop={(e) => skuDropHandler(e)}
 							onDragOver={(e) => skuDragOverHandler(e)}
@@ -440,7 +439,7 @@ function Index() {
 							}
 							<p>将 sku 表拖入这里更新</p>
 						</div>
-						<div 
+						<div
 							style={isTaobaoDropOver ? { backgroundColor: 'rgba(170, 172, 247,.8)', color: '#fff' } : {}}
 							onDrop={(e) => taobaoDropHandler(e)}
 							onDragOver={(e) => taobaoDragOverHandler(e)}
