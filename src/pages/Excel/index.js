@@ -294,9 +294,21 @@ function Index() {
 		setMissingSku(missingSku)
 	}
 
+	const fakeMark = {
+		'1': true,
+		'2': true,
+		'微博': true,
+		'豆瓣': true,
+		'阳七': true,
+		'彤彤啊': true,
+		'闹闹': true,
+		'竹哥儿': true,
+		'司徒': true,
+	}
+
 	function isFakeOrder(mark) {
 		if (mark) {
-			if (mark === '1' || mark === '2' || mark.indexOf('微博') > -1) {
+			if (fakeMark[mark]) {
 				return true
 			}
 		}
