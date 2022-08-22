@@ -89,11 +89,11 @@ function Index() {
 		for (let i = 0; i < files.length; i++) {
 			if (files[i].kind === 'file') {
 				const file = files[i].getAsFile()
-				if (file.name.indexOf('.xlsx') > -1) {
+				if (file.name.indexOf('ExportOrderList') > -1) {
 					orderSheet = file
 				} else if (file.name.indexOf('.xls') > -1) {
 					returnSheet = file
-				} else if (file.name.indexOf('.csv') > -1) {
+				} else if (file.name.indexOf('ExportOrderDetailList') > -1) {
 					productSheet = file
 				} else {
 					console.log('wrong file')
@@ -106,7 +106,7 @@ function Index() {
 		}
 
 		const p = [
-			readFile(orderSheet),
+			readFile(orderSheet, true),
 			readFile(productSheet, true),
 			readFile(returnSheet),
 		]
@@ -304,6 +304,7 @@ function Index() {
 		'闹闹': true,
 		'竹哥儿': true,
 		'司徒': true,
+		'小红书': true,
 	}
 
 	function isFakeOrder(mark) {
