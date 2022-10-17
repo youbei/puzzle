@@ -20,6 +20,7 @@ function Index() {
 	const [closed, setClosed] = useState(0)
 	const [orderDetail, setOrderDetail] = useState({})
 	const [unpaidOrder, setUnpaidOrder] = useState({})
+	const [returnDetail, setReturnDetail] = useState({})
 	const [paidAndCancelled, setPaidAndCancelled] = useState({})
 	const [validOrder, setValidOrder] = useState({})
 	const [fake, setFake] = useState(0)
@@ -90,11 +91,11 @@ function Index() {
 			if (files[i].kind === 'file') {
 				const file = files[i].getAsFile()
 				if (file.name.indexOf('ExportOrderList') > -1) {
-					orderSheet = file
+					orderSheet = file  // 订单报表 
 				} else if (file.name.indexOf('.xls') > -1) {
-					returnSheet = file
+					returnSheet = file // 退货表
 				} else if (file.name.indexOf('ExportOrderDetailList') > -1) {
-					productSheet = file
+					productSheet = file // 宝贝报表
 				} else {
 					console.log('wrong file')
 				}
@@ -155,6 +156,13 @@ function Index() {
 		let orderDetail = {}
 		let returnDetail = {}
 
+		/* 
+			处理订单报表
+			fakeOrder: 刷单
+			unpaidOrder: 拍下未付款
+			paidAndCancelled: 付款未发货就取消订单
+			validOrder: 正常付款发货订单
+		*/
 		for (let i = 0; i < orderSheet.length; i++) {
 			const id = orderSheet[i]['订单编号']
 
@@ -171,16 +179,34 @@ function Index() {
 			}
 		}
 
+		/* 
+			处理退货表
+		*/
 		for (let l = 0; l < returnSheet.length; l++) {
 			const title = returnSheet[l]['宝贝标题']
-			returnDetail[returnSheet[l]['订单编号']] = {
-				payment: returnSheet[l]['买家实际支付金额'],
-				title,
-				return: returnSheet[l]['买家退款金额'],
-				sku: title.slice(title.length - 5)
+			const id = returnSheet[l]['订单编号']
+			if (returnDetail[id]) {
+				returnDetail[id].push({
+					payment: returnSheet[l]['买家实际支付金额'],
+					title,
+					return: returnSheet[l]['买家退款金额'],
+					sku: title.slice(title.length - 5)
+				})
+			} else {
+				returnDetail[id] = [{
+					payment: returnSheet[l]['买家实际支付金额'],
+					title,
+					return: returnSheet[l]['买家退款金额'],
+					sku: title.slice(title.length - 5)
+				}]
 			}
 		}
 
+		/* 
+			处理 sku 表	
+			products: sku 对应的价格和商品简称
+			incompleteSku: sku 表中没有写价格或邮费
+		*/
 		for (let k = 0; k < skuSheet.length; k++) {
 			const sku = String(skuSheet[k]['商品编码'])
 			const cost = skuSheet[k]['进价']
@@ -197,6 +223,10 @@ function Index() {
 			}
 		}
 
+		/* 
+			处理宝贝报表	
+		*/
+		console.log(returnDetail)
 		for (let j = 0; j < productSheet.length; j++) {
 			const id = productSheet[j]['主订单编号']
 			let longSku = String(productSheet[j]['商家编码'])
@@ -230,8 +260,7 @@ function Index() {
 
 					if (productSheet[j]['订单状态'] === '交易成功') {
 						// 在退款表里再筛选一遍
-						if (returnDetail[id]) {
-							const sku = returnDetail[id].sku
+						if (returnDetail[id] && returnDetail[id].find(o => o.sku === sku)) {
 							if (!orderDetail[sku]) {
 								orderDetail[sku] = {
 									total: 0,
@@ -281,6 +310,7 @@ function Index() {
 		}
 
 		setOrderDetail(orderDetail)
+		setReturnDetail(returnDetail)
 		setUnpaidOrder(unpaidOrder)
 		setPaidAndCancelled(paidAndCancelled)
 		setValidOrder(validOrder)
@@ -361,6 +391,10 @@ function Index() {
 						</div>
 					</>
 				}
+				<div className="excel-container-left-item excel-container-left-item-important">
+					<p className="excel-container-left-item-title">退货次数</p>
+					<p className="excel-container-left-item-value">{Object.keys(returnDetail).length}</p>
+				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">退货率</p>
 					<p
@@ -461,8 +495,8 @@ function Index() {
 							className="excel-container-right-taobao"
 						>
 							<p>拖入淘宝下载的三个原始表格</p>
-							<p>1. 订单表格（去掉密码）</p>
-							<p>2. 宝贝表格</p>
+							<p>1. 订单报表</p>
+							<p>2. 宝贝报表</p>
 							<p>3. 退款表格</p>
 						</div>
 					</div>
