@@ -9,6 +9,8 @@ import OrderInfo from './OrderInfo'
 import XLSX from 'xlsx'
 import { UserContext } from '../../context/user'
 
+const RETURN_INSURANCE = 3
+
 function Index() {
 	const { user } = useContext(UserContext)
 	const [isSkuDropOver, setIsSkuDropOver] = useState(false)
@@ -20,7 +22,6 @@ function Index() {
 	const [closed, setClosed] = useState(0)
 	const [orderDetail, setOrderDetail] = useState({})
 	const [unpaidOrder, setUnpaidOrder] = useState({})
-	const [returnDetail, setReturnDetail] = useState({})
 	const [paidAndCancelled, setPaidAndCancelled] = useState({})
 	const [validOrder, setValidOrder] = useState({})
 	const [fake, setFake] = useState(0)
@@ -226,7 +227,6 @@ function Index() {
 		/* 
 			处理宝贝报表	
 		*/
-		console.log(returnDetail)
 		for (let j = 0; j < productSheet.length; j++) {
 			const id = productSheet[j]['主订单编号']
 			let longSku = String(productSheet[j]['商家编码'])
@@ -310,7 +310,6 @@ function Index() {
 		}
 
 		setOrderDetail(orderDetail)
-		setReturnDetail(returnDetail)
 		setUnpaidOrder(unpaidOrder)
 		setPaidAndCancelled(paidAndCancelled)
 		setValidOrder(validOrder)
@@ -319,7 +318,7 @@ function Index() {
 		setClosed(closed)
 		setFake(fake)
 		setFakeSum(fakeSum)
-		setTotalCost(totalCost)
+		setTotalCost(totalCost + Object.keys(returnDetail).length * RETURN_INSURANCE)
 		setIncompleteSku(incompleteSku)
 		setMissingSku(missingSku)
 	}
@@ -382,7 +381,7 @@ function Index() {
 					isLogin &&
 					<>
 						<div className="excel-container-left-item excel-container-left-item-important">
-							<p className="excel-container-left-item-title">衣物成本 + 运费</p>
+							<p className="excel-container-left-item-title">衣物成本 + 运费 + 运费险</p>
 							<p className="excel-container-left-item-value">{totalCost.toFixed(0)}</p>
 						</div>
 						<div className="excel-container-left-item excel-container-left-item-important">
@@ -391,10 +390,6 @@ function Index() {
 						</div>
 					</>
 				}
-				<div className="excel-container-left-item excel-container-left-item-important">
-					<p className="excel-container-left-item-title">退货次数</p>
-					<p className="excel-container-left-item-value">{Object.keys(returnDetail).length}</p>
-				</div>
 				<div className="excel-container-left-item">
 					<p className="excel-container-left-item-title">退货率</p>
 					<p
