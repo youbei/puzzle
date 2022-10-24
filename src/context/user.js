@@ -1,9 +1,9 @@
 import React from 'react'
 
 export const DefaultUser = {
-	isLogin: false, 
-	name: '',
-	update: () => {},
+	isLogin: true,
+	name: 'jinyoubei',
+	update: () => { },
 }
 
 export const UserContext = React.createContext(DefaultUser)

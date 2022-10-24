@@ -6,7 +6,7 @@ import MissingSku from './MissingSku'
 import IncompleteSku from './IncompleteSku'
 import ReturnRatio from './ReturnRatio'
 import OrderInfo from './OrderInfo'
-import XLSX from 'xlsx'
+import { read, utils, writeFile } from 'xlsx'
 import { UserContext } from '../../context/user'
 
 const RETURN_INSURANCE = 3
@@ -132,8 +132,8 @@ function Index() {
 				for (let i = 0; i < length; i++) {
 					binary += String.fromCharCode(bytes[i])
 				}
-				const workbook = XLSX.read(binary, isCsv ? { type: 'binary', codepage: 936 } : { type: 'binary' })
-				const xlsxData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])
+				const workbook = read(binary, isCsv ? { type: 'binary', codepage: 936 } : { type: 'binary' })
+				const xlsxData = utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])
 				resolve(xlsxData)
 			}, false)
 			reader.readAsArrayBuffer(file)
@@ -351,10 +351,6 @@ function Index() {
 			return null
 		}
 
-		const returnRatio = `${(closed / (succeed + closed) * 100).toFixed(2)}%`
-
-		const { isLogin } = user
-
 		return (
 			<>
 				<div className="excel-container-left-item">
@@ -454,6 +450,40 @@ function Index() {
 		setHasSku(hasSku)
 	}, [hasSku])
 
+	function download() {
+		const defaultSheet = [
+			{
+				'刷单金额': fakeSum.toFixed(0),
+				'真实成交金额': sum.toFixed(0),
+				'衣物成本+运费+运费险': totalCost.toFixed(0),
+				'毛利': (sum - totalCost).toFixed(0),
+				'退货率': returnRatio,
+				'拍下未支付': Object.keys(unpaidOrder).length,
+				'仅退款': Object.keys(paidAndCancelled).length,
+				'有效订单(含退货)': Object.keys(validOrder).length
+			},
+		]
+
+		const returnRatioSheet = []
+		for (const key in orderDetail) {
+			returnRatioSheet.push({
+				'sku': key,
+				'宝贝': orderDetail[key].title,
+				'净销量': orderDetail[key].succeed,
+				'退货量': orderDetail[key].closed,
+				'退货率': `${(orderDetail[key].closed / orderDetail[key].total * 100).toFixed(2)}%`,
+			})
+		}
+		const ws1 = utils.json_to_sheet(defaultSheet)
+		const ws2 = utils.json_to_sheet(returnRatioSheet)
+		const wb = utils.book_new()
+		utils.book_append_sheet(wb, ws1, '毛利')
+		utils.book_append_sheet(wb, ws2, '退货率')
+		writeFile(wb, '结算.xlsx')
+	}
+
+	const { isLogin } = user
+	const returnRatio = `${(closed / (succeed + closed) * 100).toFixed(2)}%`
 	return (
 		<div className="excel">
 			<Header />
@@ -494,6 +524,12 @@ function Index() {
 							<p>2. 宝贝报表</p>
 							<p>3. 退款表格</p>
 						</div>
+						{
+							hasSku && hasFiles && user.isLogin &&
+							<div className="excel-container-right-download" onClick={() => download()}>
+								<p>下载表格</p>
+							</div>
+						}
 					</div>
 				</div>
 			</Container>
