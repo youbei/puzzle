@@ -474,11 +474,36 @@ function Index() {
 				'退货率': `${(orderDetail[key].closed / orderDetail[key].total * 100).toFixed(2)}%`,
 			})
 		}
+
+		const keys = Object.keys(missingSku)
+		let products = {}
+		keys.forEach((key) => {
+			missingSku[key].forEach((item) => {
+				if (products[item.title]) {
+					products[item.title].number = products[item.title].number + 1
+				} else {
+					products[item.title] = { sku: item.sku, number: 1, reason: item.reason }
+				}
+			})
+		})
+		const missingSheet = []
+		for (const key in products) {
+			missingSheet.push({
+				'宝贝': key,
+				'数量': products[key].number,
+				'原因': products[key].reason,
+				'sku': products[key].sku,
+			})
+		}
+
+
 		const ws1 = utils.json_to_sheet(defaultSheet)
 		const ws2 = utils.json_to_sheet(returnRatioSheet)
+		const ws3 = utils.json_to_sheet(missingSheet)
 		const wb = utils.book_new()
 		utils.book_append_sheet(wb, ws1, '毛利')
 		utils.book_append_sheet(wb, ws2, '退货率')
+		utils.book_append_sheet(wb, ws3, '没有计算成本')
 		writeFile(wb, '结算.xlsx')
 	}
 
