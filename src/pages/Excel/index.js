@@ -167,7 +167,7 @@ function Index() {
 		for (let i = 0; i < orderSheet.length; i++) {
 			const id = orderSheet[i]['订单编号']
 
-			if (isFakeOrder(orderSheet[i]['商家备忘'])) {
+			if (isFakeOrder(orderSheet[i]['商家备注'])) {
 				fakeOrder[id] = true
 			} else {
 				if (orderSheet[i]['订单关闭原因'] === '买家未付款') {
@@ -337,6 +337,7 @@ function Index() {
 	}
 
 	function isFakeOrder(mark) {
+		console.log(mark)
 		if (mark) {
 			if (fakeMark[mark]) {
 				return true
