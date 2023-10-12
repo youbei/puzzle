@@ -337,7 +337,6 @@ function Index() {
 	}
 
 	function isFakeOrder(mark) {
-		console.log(mark)
 		if (mark) {
 			if (fakeMark[mark]) {
 				return true
