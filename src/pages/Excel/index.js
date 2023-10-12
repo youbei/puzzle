@@ -282,10 +282,10 @@ function Index() {
 							orderDetail[sku].total = orderDetail[sku].total + 1
 
 							// 计算成本
-							if (products[sku]) {
-								totalCost = totalCost + products[sku].cost
-							} else if (products[longSku]) {
+							if (products[longSku]) {
 								totalCost = totalCost + products[longSku].cost
+							} else if (products[sku]) {
+								totalCost = totalCost + products[sku].cost
 							} else { // sku 表里找不到该 sku
 								if (missingSku[id]) {
 									missingSku[id].push({ title, sku, reason: 'sku 表里找不到' })
