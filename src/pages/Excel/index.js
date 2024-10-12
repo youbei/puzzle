@@ -93,10 +93,10 @@ function Index() {
 				const file = files[i].getAsFile()
 				if (file.name.indexOf('ExportOrderList') > -1) {
 					orderSheet = file  // 订单报表 
-				} else if (file.name.indexOf('.xls') > -1) {
-					returnSheet = file // 退货表
 				} else if (file.name.indexOf('ExportOrderDetailList') > -1) {
 					productSheet = file // 宝贝报表
+				} else if (file.name.indexOf('.xls') > -1) {
+					returnSheet = file // 退货表
 				} else {
 					console.log('wrong file')
 				}
