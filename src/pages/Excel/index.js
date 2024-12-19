@@ -9,7 +9,7 @@ import OrderInfo from './OrderInfo'
 import { read, utils, writeFile } from 'xlsx'
 import { UserContext } from '../../context/user'
 
-const RETURN_INSURANCE = 3
+const RETURN_INSURANCE = 5
 
 function Index() {
 	const { user } = useContext(UserContext)
